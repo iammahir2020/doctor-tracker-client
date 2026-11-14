@@ -4,6 +4,100 @@ export type Role = "admin" | "staff";
 
 export type User = { id: string; name: string; email: string; role: Role };
 
+export type Paged<T> = {
+  data: T[];
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+};
+
+type Archivable = { isArchived: boolean; archivedAt?: string | null };
+
+export type Lookup = { _id: string; name: string; isArchived: boolean };
+export type LookupType = "specializations" | "conditions";
+export type Lookups = Record<LookupType, Lookup[]>;
+
+export type Doctor = Archivable & {
+  _id: string;
+  name: string;
+  specialization: string;
+  hospital: string;
+  phone: string;
+  email: string;
+  patientCount: number;
+  createdAt: string;
+};
+
+export const GENDERS = ["male", "female", "other"] as const;
+export const PATIENT_STATUSES = ["active", "recovered", "critical"] as const;
+export type Gender = (typeof GENDERS)[number];
+export type PatientStatus = (typeof PATIENT_STATUSES)[number];
+
+export type Patient = Archivable & {
+  _id: string;
+  name: string;
+  dateOfBirth: string;
+  gender: Gender;
+  phone: string;
+  email: string | null;
+  condition: string;
+  status: PatientStatus;
+  admissionDate: string;
+  notes?: string;
+  doctorId: string;
+  doctorName: string | null;
+  createdAt: string;
+};
+
+export type ManagedUser = Archivable & {
+  _id: string;
+  name: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+};
+
+export type Stats = {
+  range: { from: string; to: string };
+  current: {
+    totalDoctors: number;
+    activePatients: number;
+    criticalPatients: number;
+    avgPatientsPerDoctor: number;
+    patientsByStatus: { status: PatientStatus; count: number }[];
+    doctorsBySpecialization: { specialization: string; count: number }[];
+    topDoctors: { _id: string; name: string; specialization: string; patientCount: number }[];
+    patientsPerDoctor: { label: string; count: number }[];
+  };
+  inRange: {
+    admissions: number;
+    admissionsByMonth: { month: string; count: number }[];
+    byCondition: { condition: string; count: number }[];
+    byStatus: { status: PatientStatus; count: number }[];
+  };
+};
+
+/** Field-level errors from a 400 response, keyed by field name, for react-hook-form. */
+export function fieldErrors(error: unknown): Record<string, string> {
+  if (!(error instanceof ApiError) || !Array.isArray(error.details)) return {};
+  const out: Record<string, string> = {};
+  for (const d of error.details as unknown[]) {
+    if (typeof d === "object" && d !== null && "path" in d && "message" in d) {
+      const path = String(d.path);
+      if (path && !(path in out)) out[path] = String(d.message);
+    }
+  }
+  return out;
+}
+
+export function toQueryString(params: Record<string, unknown>) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    qs.set(key, Array.isArray(value) ? value.join(",") : String(value));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
 // ---------- fetch wrapper ----------
 
 export class ApiError extends Error {

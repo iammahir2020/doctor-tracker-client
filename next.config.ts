@@ -6,6 +6,7 @@ const apiUrl = (process.env.API_URL ?? "http://localhost:4000").replace(/\/+$/, 
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  agentRules: false,
   turbopack: {
     rules: {
       "*.css": {
