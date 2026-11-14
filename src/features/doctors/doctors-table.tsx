@@ -2,10 +2,12 @@
 
 import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EmptyState, PageHeader, RoleGate, useIsAdmin } from "@/components/common";
+import { EmptyState, InitialsAvatar, PageHeader, RoleGate, useIsAdmin } from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
 import {
+  ActiveFilters,
   DateRangePicker,
   FilterBar,
   MultiSelectFilter,
@@ -42,24 +44,33 @@ const COLUMNS: Column<Doctor>[] = [
     sortKey: "name",
     primary: true,
     cell: (d) => (
-      <span className="flex items-center gap-2">
-        <Link
-          href={`/doctors/${d._id}`}
-          className="font-medium hover:underline focus-visible:underline focus-visible:outline-none"
-        >
-          {d.name}
-        </Link>
-        {d.isArchived && <Badge variant="outline">Archived</Badge>}
+      <span className="flex min-w-0 items-center gap-3">
+        <InitialsAvatar name={d.name} />
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/doctors/${d._id}`}
+              className="font-medium hover:underline focus-visible:underline focus-visible:outline-none"
+            >
+              {d.name}
+            </Link>
+            {d.isArchived && <Badge variant="outline">Archived</Badge>}
+          </span>
+          <span className="block text-xs break-all text-muted-foreground">{d.email}</span>
+        </span>
       </span>
     ),
   },
   {
     id: "specialization",
     header: "Specialization",
-    cell: (d) => <SpecializationName id={d.specialization} />,
+    cell: (d) => (
+      <Badge variant="secondary" className="font-normal">
+        <SpecializationName id={d.specialization} />
+      </Badge>
+    ),
   },
   { id: "hospital", header: "Hospital", cell: (d) => d.hospital },
-  { id: "email", header: "Email", cell: (d) => d.email, className: "hidden lg:table-cell" },
   { id: "phone", header: "Phone", cell: (d) => d.phone, className: "hidden xl:table-cell" },
   {
     id: "patientCount",
@@ -138,6 +149,7 @@ function DoctorRowActions({
 }
 
 export function DoctorsView() {
+  const router = useRouter();
   const url = useUrlState();
   const params = useDoctorParams();
   const query = useDoctors(compact(params) as DoctorListParams);
@@ -229,7 +241,49 @@ export function DoctorsView() {
         )}
       </FilterBar>
 
+      <ActiveFilters
+        onClearAll={() => url.clear(FILTER_KEYS)}
+        chips={[
+          ...(params.specialization ?? []).map((id) => ({
+            key: `spec-${id}`,
+            label: lookups?.specializationName.get(id) ?? "Specialization",
+            onRemove: () =>
+              url.set({
+                specialization: (params.specialization ?? []).filter((x) => x !== id).join(","),
+              }),
+          })),
+          ...(params.hospital
+            ? [
+                {
+                  key: "hospital",
+                  label: `Hospital: ${params.hospital}`,
+                  onRemove: () => url.set({ hospital: null }),
+                },
+              ]
+            : []),
+          ...(params.createdFrom
+            ? [
+                {
+                  key: "created",
+                  label: `Added ${formatDate(params.createdFrom)} - ${formatDate(params.createdTo)}`,
+                  onRemove: () => url.set({ createdFrom: null, createdTo: null }),
+                },
+              ]
+            : []),
+          ...(params.minPatients !== undefined || params.maxPatients !== undefined
+            ? [
+                {
+                  key: "patients",
+                  label: `Patients ${params.minPatients ?? 0} - ${params.maxPatients ?? "any"}`,
+                  onRemove: () => url.set({ minPatients: null, maxPatients: null }),
+                },
+              ]
+            : []),
+        ]}
+      />
+
       <DataTable
+        onRowClick={(d) => router.push(`/doctors/${d._id}`)}
         caption="Doctors"
         columns={COLUMNS}
         data={query.data}

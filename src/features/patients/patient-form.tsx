@@ -175,6 +175,9 @@ export function PatientFormDialog({
           noValidate
           className="grid gap-4 sm:grid-cols-2"
         >
+          <h3 className="text-sm font-semibold text-muted-foreground sm:col-span-2">
+            Personal details
+          </h3>
           <Field label="Full name" id="p-name" error={errors.name?.message}>
             <Input
               id="p-name"
@@ -213,7 +216,13 @@ export function PatientFormDialog({
             />
           </Field>
           <Field label="Phone" id="p-phone" error={errors.phone?.message}>
-            <Input id="p-phone" type="tel" aria-invalid={!!errors.phone} {...register("phone")} />
+            <Input
+              id="p-phone"
+              type="tel"
+              placeholder="+880 1711 000000"
+              aria-invalid={!!errors.phone}
+              {...register("phone")}
+            />
           </Field>
           <Field label="Email (optional)" id="p-email" error={errors.email?.message}>
             <Input
@@ -224,6 +233,9 @@ export function PatientFormDialog({
               {...register("email")}
             />
           </Field>
+          <h3 className="mt-2 border-t pt-4 text-sm font-semibold text-muted-foreground sm:col-span-2">
+            Admission
+          </h3>
           <Field label="Condition" id="p-condition" error={errors.condition?.message}>
             <Controller
               control={control}

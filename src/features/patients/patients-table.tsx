@@ -10,10 +10,18 @@ import {
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ConfirmDialog, EmptyState, PageHeader, useIsAdmin } from "@/components/common";
+import {
+  ConfirmDialog,
+  EmptyState,
+  InitialsAvatar,
+  PageHeader,
+  useIsAdmin,
+} from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
 import {
+  ActiveFilters,
   DateRangePicker,
   FilterBar,
   MultiSelectFilter,
@@ -46,6 +54,7 @@ import { ApiError, GENDERS, PATIENT_STATUSES, type Patient, type PatientStatus }
 import { ageFrom, cn, compact, formatDate, plural, useUrlState } from "@/lib/utils";
 import { useSetPatientArchived, usePatients, type PatientListParams } from "./api";
 import { GENDER_LABEL, PatientFormDialog, STATUS_LABEL } from "./patient-form";
+import { PatientSheet } from "./patient-sheet";
 
 const STATUS_STYLE: Record<PatientStatus, string> = {
   active: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
@@ -58,6 +67,23 @@ export function StatusBadge({ status }: { status: PatientStatus }) {
     <Badge variant="outline" className={STATUS_STYLE[status]}>
       {STATUS_LABEL[status]}
     </Badge>
+  );
+}
+
+/** Opens the patient panel; a real link, so it also works with middle-click and the keyboard. */
+function PatientLink({ patient }: { patient: Patient }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const next = new URLSearchParams(searchParams.toString());
+  next.set("patient", patient._id);
+  return (
+    <Link
+      href={`${pathname}?${next.toString()}`}
+      scroll={false}
+      className="font-medium hover:underline focus-visible:underline focus-visible:outline-none"
+    >
+      {patient.name}
+    </Link>
   );
 }
 
@@ -74,9 +100,12 @@ const COLUMNS: Column<Patient>[] = [
     sortKey: "name",
     primary: true,
     cell: (p) => (
-      <span className="flex items-center gap-2">
-        <span className="font-medium">{p.name}</span>
-        {p.isArchived && <Badge variant="outline">Archived</Badge>}
+      <span className="flex min-w-0 items-center gap-3">
+        <InitialsAvatar name={p.name} />
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <PatientLink patient={p} />
+          {p.isArchived && <Badge variant="outline">Archived</Badge>}
+        </span>
       </span>
     ),
   },
@@ -320,6 +349,9 @@ export function PatientsTable({
     setArchiving(patient);
     setArchiveOpen(true);
   };
+  // The panel lives in the URL (?patient=id); keep the current page when opening/closing it.
+  const keepPage = params.page === 1 ? null : params.page;
+  const openPatient = (id: string) => url.set({ patient: id, page: keepPage });
   const hasFilters = url.has(FILTER_KEYS);
 
   const addButton = doctor?.isArchived ? null : (
@@ -389,7 +421,53 @@ export function PatientsTable({
         )}
       </FilterBar>
 
+      <ActiveFilters
+        onClearAll={() => url.clear(FILTER_KEYS)}
+        chips={[
+          ...(params.condition ?? []).map((id) => ({
+            key: `condition-${id}`,
+            label: lookups?.conditionName.get(id) ?? "Condition",
+            onRemove: () =>
+              url.set({ condition: (params.condition ?? []).filter((x) => x !== id).join(",") }),
+          })),
+          ...(params.status ?? []).map((st) => ({
+            key: `status-${st}`,
+            label: STATUS_LABEL[st],
+            onRemove: () =>
+              url.set({ status: (params.status ?? []).filter((x) => x !== st).join(",") }),
+          })),
+          ...(params.gender
+            ? [
+                {
+                  key: "gender",
+                  label: GENDER_LABEL[params.gender as keyof typeof GENDER_LABEL] ?? params.gender,
+                  onRemove: () => url.set({ gender: null }),
+                },
+              ]
+            : []),
+          ...(params.admittedFrom
+            ? [
+                {
+                  key: "admitted",
+                  label: `Admitted ${formatDate(params.admittedFrom)} - ${formatDate(params.admittedTo)}`,
+                  onRemove: () => url.set({ admittedFrom: null, admittedTo: null }),
+                },
+              ]
+            : []),
+          ...(params.minAge !== undefined || params.maxAge !== undefined
+            ? [
+                {
+                  key: "age",
+                  label: `Age ${params.minAge ?? 0} - ${params.maxAge ?? "any"}`,
+                  onRemove: () => url.set({ minAge: null, maxAge: null }),
+                },
+              ]
+            : []),
+        ]}
+      />
+
       <DataTable
+        onRowClick={(p) => openPatient(p._id)}
         caption={doctor ? `Patients of ${doctor.name}` : "Patients"}
         columns={doctor ? COLUMNS_FOR_DOCTOR : COLUMNS}
         data={query.data}
@@ -442,6 +520,14 @@ export function PatientsTable({
         }
       />
       <PatientArchiveDialog patient={archiving} open={archiveOpen} onOpenChange={setArchiveOpen} />
+      <PatientSheet
+        id={url.get("patient")}
+        onClose={() => url.set({ patient: null, page: keepPage })}
+        onEdit={(p) => openForm(p)}
+        onArchive={openArchive}
+        canArchive={isAdmin}
+        statusBadge={(p) => <StatusBadge status={p.status} />}
+      />
     </>
   );
 }

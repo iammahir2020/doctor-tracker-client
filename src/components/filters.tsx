@@ -405,3 +405,38 @@ export function RangeInput({
     </fieldset>
   );
 }
+
+export type FilterChip = { key: string; label: string; onRemove: () => void };
+
+/** The filters currently narrowing the list, each removable on its own. */
+export function ActiveFilters({
+  chips,
+  onClearAll,
+}: {
+  chips: FilterChip[];
+  onClearAll: () => void;
+}) {
+  if (chips.length === 0) return null;
+  return (
+    <div className="-mt-1 mb-4 flex flex-wrap items-center gap-1.5" aria-label="Active filters">
+      {chips.map((chip) => (
+        <Badge key={chip.key} variant="secondary" className="gap-1 py-1 pr-1 pl-2 font-normal">
+          {chip.label}
+          <button
+            type="button"
+            onClick={chip.onRemove}
+            className="rounded-sm p-0.5 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            aria-label={`Remove filter: ${chip.label}`}
+          >
+            <X className="size-3" aria-hidden />
+          </button>
+        </Badge>
+      ))}
+      {chips.length > 1 && (
+        <Button variant="link" size="sm" className="h-auto px-1 text-xs" onClick={onClearAll}>
+          Clear all
+        </Button>
+      )}
+    </div>
+  );
+}

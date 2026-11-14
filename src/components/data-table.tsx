@@ -52,6 +52,11 @@ type DataTableProps<T> = {
   /** Row-level actions (menu), shown in the last column and in the card header. */
   rowActions?: (row: T) => React.ReactNode;
   rowClassName?: (row: T) => string | undefined;
+  /**
+   * Makes the whole row open the record. The row's own link/button stays the keyboard and
+   * screen-reader path, so clicks that land on any interactive element are left alone.
+   */
+  onRowClick?: (row: T) => void;
   empty: React.ReactNode;
   caption: string;
 };
@@ -104,6 +109,7 @@ export function DataTable<T>({
   onPageSizeChange,
   rowActions,
   rowClassName,
+  onRowClick,
   empty,
   caption,
 }: DataTableProps<T>) {
@@ -118,6 +124,13 @@ export function DataTable<T>({
   }
 
   const rows = data?.data ?? [];
+  const rowClick = (row: T) => (e: React.MouseEvent) => {
+    if (!onRowClick) return;
+    if ((e.target as HTMLElement).closest("a, button, input, [role='menuitem'], [role='dialog']")) {
+      return;
+    }
+    onRowClick(row);
+  };
   const showSkeleton = isPending && !data;
   const primary = columns.find((c) => c.primary) ?? columns[0];
   const ariaSort = (c: Column<T>) =>
@@ -169,7 +182,11 @@ export function DataTable<T>({
                   ))}
                 {!showSkeleton &&
                   rows.map((row) => (
-                    <TableRow key={getRowId(row)} className={rowClassName?.(row)}>
+                    <TableRow
+                      key={getRowId(row)}
+                      className={cn(onRowClick && "cursor-pointer", rowClassName?.(row))}
+                      onClick={rowClick(row)}
+                    >
                       {columns.map((c) => (
                         <TableCell key={c.id} className={c.className}>
                           {c.cell(row)}
@@ -195,7 +212,15 @@ export function DataTable<T>({
               ))}
             {!showSkeleton &&
               rows.map((row) => (
-                <li key={getRowId(row)} className={cn("space-y-2 p-4", rowClassName?.(row))}>
+                <li
+                  key={getRowId(row)}
+                  className={cn(
+                    "space-y-2 p-4",
+                    onRowClick && "cursor-pointer active:bg-muted/50",
+                    rowClassName?.(row),
+                  )}
+                  onClick={rowClick(row)}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
                     {rowActions?.(row)}

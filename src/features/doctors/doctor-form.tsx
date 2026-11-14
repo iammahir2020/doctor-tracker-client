@@ -160,7 +160,13 @@ export function DoctorFormDialog({
             <Input id="hospital" {...register("hospital")} />
           </Field>
           <Field label="Phone" id="phone" error={errors.phone?.message}>
-            <Input id="phone" type="tel" autoComplete="off" {...register("phone")} />
+            <Input
+              id="phone"
+              type="tel"
+              autoComplete="off"
+              placeholder="+880 1711 000000"
+              {...register("phone")}
+            />
           </Field>
           <Field label="Email" id="email" error={errors.email?.message}>
             <Input

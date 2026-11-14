@@ -46,6 +46,14 @@ export function usePatients(params: PatientListParams) {
   });
 }
 
+export function usePatient(id: string | undefined) {
+  return useQuery({
+    queryKey: ["patients", "detail", id],
+    queryFn: ({ signal }) => api<Patient>(`/patients/${id}`, { signal }),
+    enabled: Boolean(id),
+  });
+}
+
 /**
  * A patient write can change the patient lists, a doctor's patient count (list + detail) and
  * the dashboard, so all three are refreshed.

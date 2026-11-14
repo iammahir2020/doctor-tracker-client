@@ -18,7 +18,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CommandPalette } from "@/components/command-palette";
+import { InitialsAvatar } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -120,14 +121,6 @@ function ThemeToggle() {
   );
 }
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 function UserMenu() {
   const me = useCurrentUser();
   const logout = useLogout();
@@ -138,9 +131,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
-          <Avatar className="size-8">
-            <AvatarFallback>{initials(me.name)}</AvatarFallback>
-          </Avatar>
+          <InitialsAvatar name={me.name} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -227,7 +218,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="md:hidden">
             <Brand />
           </div>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1.5">
+            <CommandPalette />
             <ThemeToggle />
             <UserMenu />
           </div>

@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Loader2, SearchX } from "lucide-react";
 import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCurrentUser } from "@/features/auth/api";
 import { ApiError, type Role } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export function PageHeader({
   title,
@@ -198,5 +200,25 @@ export function Field({
         </p>
       )}
     </div>
+  );
+}
+
+function initials(name: string) {
+  return name
+    .replace(/^(dr|mr|mrs|ms|miss)\.?\s+/i, "")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/** Initials in a tinted circle: gives people in lists a quick visual anchor. */
+export function InitialsAvatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <Avatar className={cn("size-8", className)} aria-hidden>
+      <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+        {initials(name)}
+      </AvatarFallback>
+    </Avatar>
   );
 }
