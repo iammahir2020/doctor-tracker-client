@@ -136,3 +136,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  /* Removes the double-tap-to-zoom delay on touch screens. */
+  a,
+  button,
+  input,
+  label,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+}

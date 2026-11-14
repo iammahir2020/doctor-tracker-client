@@ -222,7 +222,13 @@ export function PatientFormDialog({
             <Input id="p-phone" type="tel" aria-invalid={!!errors.phone} {...register("phone")} />
           </Field>
           <Field label="Email (optional)" id="p-email" error={errors.email?.message}>
-            <Input id="p-email" type="email" aria-invalid={!!errors.email} {...register("email")} />
+            <Input
+              id="p-email"
+              type="email"
+              spellCheck={false}
+              aria-invalid={!!errors.email}
+              {...register("email")}
+            />
           </Field>
           <Field label="Condition" id="p-condition" error={errors.condition?.message}>
             <Controller

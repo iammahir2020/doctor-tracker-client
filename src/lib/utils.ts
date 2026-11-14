@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export { cn } from "cn";
 
@@ -64,7 +64,7 @@ export function compact<T extends Record<string, unknown>>(obj: T): Partial<T> {
 }
 
 export function formatDate(iso: string | null | undefined) {
-  return iso ? format(parseISO(iso), "d MMM yyyy") : "—";
+  return iso ? format(parseISO(iso), "d MMM yyyy") : "-";
 }
 
 /** yyyy-MM-dd for date inputs and URL params. */
@@ -84,3 +84,24 @@ export function ageFrom(dateOfBirth: string) {
 }
 
 export const numberFormat = new Intl.NumberFormat("en-US");
+
+/** "1 doctor", "48 doctors". */
+export function plural(count: number, one: string, many = `${one}s`) {
+  return `${numberFormat.format(count)} ${count === 1 ? one : many}`;
+}
+
+/**
+ * Hydration-safe media query: the server (and hydration) use `serverValue`, then the real value.
+ * Used to render one layout instead of rendering two and hiding one with CSS.
+ */
+export function useMediaQuery(query: string, serverValue: boolean) {
+  return useSyncExternalStore(
+    (onChange) => {
+      const media = window.matchMedia(query);
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => serverValue,
+  );
+}

@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { useCurrentUser } from "@/features/auth/api";
 import { ApiError, fieldErrors, type ManagedUser, type Role } from "@/lib/api";
-import { cn, compact, formatDate, numberFormat, useUrlState } from "@/lib/utils";
+import { cn, compact, formatDate, plural, useUrlState } from "@/lib/utils";
 import {
   useCreateUser,
   useSetUserArchived,
@@ -186,6 +186,7 @@ function UserFormDialog({
                 <Input
                   id="u-email"
                   type="email"
+                  spellCheck={false}
                   autoComplete="off"
                   aria-invalid={!!errors.email}
                   {...register("email")}
@@ -337,7 +338,7 @@ function UsersList() {
         title={params.archived ? "Archived users" : "Users"}
         description={
           query.data
-            ? `${numberFormat.format(query.data.meta.total)} ${params.archived ? "archived" : "active"} users who can sign in`
+            ? `${plural(query.data.meta.total, `${params.archived ? "archived" : "active"} user`)} ${params.archived ? "" : "who can sign in"}`.trim()
             : "People who can sign in to Doctor Tracker."
         }
         actions={

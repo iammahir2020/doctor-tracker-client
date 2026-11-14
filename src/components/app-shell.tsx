@@ -145,8 +145,8 @@ function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
-          <p className="truncate text-sm font-medium">{me.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{me.email}</p>
+          <p className="text-sm font-medium break-words">{me.name}</p>
+          <p className="text-xs [overflow-wrap:anywhere] text-muted-foreground">{me.email}</p>
           <p className="mt-1 text-xs text-muted-foreground capitalize">{me.role}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -169,9 +169,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-svh">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow-md focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 flex-col gap-6 border-r bg-sidebar p-3 transition-[width] md:flex",
+          "sticky top-0 hidden h-svh shrink-0 flex-col gap-6 border-r bg-sidebar p-3 transition-[width] motion-reduce:transition-none md:flex",
           collapsed ? "w-16" : "w-60",
         )}
       >
@@ -226,7 +232,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <UserMenu />
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main id="main" tabIndex={-1} className="flex-1 p-4 outline-none md:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

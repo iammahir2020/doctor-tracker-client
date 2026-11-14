@@ -37,8 +37,14 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    setFocus,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  // Focus the email field on desktop only; on phones it would pop the keyboard over the page.
+  useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) setFocus("email");
+  }, [setFocus]);
 
   const onSubmit = handleSubmit((values) => {
     login.mutate(values, { onSuccess: () => router.replace(safeNext(searchParams.get("next"))) });
@@ -80,8 +86,8 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
+              spellCheck={false}
               autoComplete="email"
-              autoFocus
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
               {...register("email")}

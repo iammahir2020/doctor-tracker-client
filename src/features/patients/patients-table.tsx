@@ -25,7 +25,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useLookups } from "@/features/lookups/api";
 import { GENDERS, PATIENT_STATUSES, type Patient, type PatientStatus } from "@/lib/api";
-import { ageFrom, cn, compact, formatDate, numberFormat, useUrlState } from "@/lib/utils";
+import { ageFrom, cn, compact, formatDate, plural, useUrlState } from "@/lib/utils";
 import { useSetPatientArchived, usePatients, type PatientListParams } from "./api";
 import { GENDER_LABEL, PatientFormDialog, STATUS_LABEL } from "./patient-form";
 
@@ -45,7 +45,7 @@ export function StatusBadge({ status }: { status: PatientStatus }) {
 
 function ConditionName({ id }: { id: string }) {
   const { data } = useLookups();
-  return <>{data?.conditionName.get(id) ?? "—"}</>;
+  return <>{data?.conditionName.get(id) ?? "-"}</>;
 }
 
 // Module-level so they aren't rebuilt on every render.
@@ -81,7 +81,7 @@ const COLUMNS: Column<Patient>[] = [
           {p.doctorName}
         </Link>
       ) : (
-        "—"
+        "-"
       ),
   },
   {
@@ -260,6 +260,7 @@ export function PatientsTable({
         />
         <RangeInput
           label="Age"
+          placeholder={["e.g. 18", "e.g. 65"]}
           min={params.minAge}
           max={params.maxAge}
           onChange={(r) => url.set({ minAge: r.min, maxAge: r.max })}
@@ -335,7 +336,7 @@ export function PatientsView() {
           description={
             total === undefined
               ? "Search, filter and manage patients."
-              : `${numberFormat.format(total)} ${archived ? "archived" : "active"} patients`
+              : plural(total, `${archived ? "archived" : "active"} patient`)
           }
           actions={archived ? null : addButton}
         />

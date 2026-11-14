@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLookups } from "@/features/lookups/api";
 import { PatientsTable } from "@/features/patients/patients-table";
 import { ApiError } from "@/lib/api";
-import { formatDate, numberFormat } from "@/lib/utils";
+import { formatDate, numberFormat, plural } from "@/lib/utils";
 import { useDoctor, useSetDoctorArchived } from "./api";
 import { DoctorFormDialog } from "./doctor-form";
 
@@ -66,7 +66,7 @@ export function DoctorDetail({ id }: { id: string }) {
             {doctor.isArchived && <Badge variant="outline">Archived</Badge>}
           </h1>
           <p className="text-muted-foreground">
-            {lookups?.specializationName.get(doctor.specialization) ?? "—"}
+            {lookups?.specializationName.get(doctor.specialization) ?? "Unknown specialization"}
           </p>
         </div>
         <RoleGate role="admin">
@@ -152,7 +152,7 @@ export function DoctorDetail({ id }: { id: string }) {
         description={
           archive
             ? doctor.patientCount > 0
-              ? `${doctor.name} has ${doctor.patientCount} active patients. Reassign or archive them first, then archive the doctor.`
+              ? `${doctor.name} has ${plural(doctor.patientCount, "active patient")}. Reassign or archive them first, then archive the doctor.`
               : "Archiving removes the doctor from active lists and the dashboard. Nothing is deleted, and an admin can restore them later."
             : "The doctor will appear in lists, search and the dashboard again."
         }
@@ -178,7 +178,7 @@ function Info({
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="truncate">{value}</p>
+        <p className="[overflow-wrap:anywhere] break-words">{value}</p>
       </div>
     </div>
   );

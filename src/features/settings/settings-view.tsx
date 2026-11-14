@@ -84,7 +84,7 @@ function AccountTab() {
               <dt className="text-muted-foreground">Name</dt>
               <dd>{me.name}</dd>
               <dt className="text-muted-foreground">Email</dt>
-              <dd className="truncate">{me.email}</dd>
+              <dd className="[overflow-wrap:anywhere]">{me.email}</dd>
               <dt className="text-muted-foreground">Role</dt>
               <dd className="capitalize">{me.role}</dd>
             </dl>

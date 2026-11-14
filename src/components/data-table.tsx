@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { ErrorState } from "@/components/common";
 import type { Paged } from "@/lib/api";
-import { cn, numberFormat } from "@/lib/utils";
+import { cn, numberFormat, useMediaQuery } from "@/lib/utils";
 
 export type Column<T> = {
   id: string;
@@ -107,6 +107,8 @@ export function DataTable<T>({
   empty,
   caption,
 }: DataTableProps<T>) {
+  // Render only the layout in use (not both with one hidden by CSS): half the DOM for 50 rows.
+  const isDesktop = useMediaQuery("(min-width: 768px)", true);
   if (error && !data) {
     return (
       <div className="rounded-lg border">
@@ -135,80 +137,83 @@ export function DataTable<T>({
         aria-busy={isFetching}
       >
         {/* Desktop / tablet: table */}
-        <div className="hidden md:block">
-          <Table>
-            <caption className="sr-only">{caption}</caption>
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead key={c.id} className={c.className} aria-sort={ariaSort(c)}>
-                    <SortHeader column={c} sort={sort} onSortChange={onSortChange} />
-                  </TableHead>
-                ))}
-                {rowActions && (
-                  <TableHead className="w-12">
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {showSkeleton &&
-                Array.from({ length: 8 }, (_, i) => (
-                  <TableRow key={i}>
-                    {columns.map((c) => (
-                      <TableCell key={c.id}>
-                        <Skeleton className="h-4 w-full max-w-40" />
-                      </TableCell>
-                    ))}
-                    {rowActions && <TableCell />}
-                  </TableRow>
-                ))}
-              {!showSkeleton &&
-                rows.map((row) => (
-                  <TableRow key={getRowId(row)} className={rowClassName?.(row)}>
-                    {columns.map((c) => (
-                      <TableCell key={c.id} className={c.className}>
-                        {c.cell(row)}
-                      </TableCell>
-                    ))}
-                    {rowActions && <TableCell className="text-right">{rowActions(row)}</TableCell>}
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Mobile: stacked cards */}
-        <ul className="divide-y md:hidden" aria-label={caption}>
-          {showSkeleton &&
-            Array.from({ length: 5 }, (_, i) => (
-              <li key={i} className="space-y-2 p-4">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-56" />
-                <Skeleton className="h-4 w-32" />
-              </li>
-            ))}
-          {!showSkeleton &&
-            rows.map((row) => (
-              <li key={getRowId(row)} className={cn("space-y-2 p-4", rowClassName?.(row))}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
-                  {rowActions?.(row)}
-                </div>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                  {columns
-                    .filter((c) => c !== primary && !c.hideOnMobile)
-                    .map((c) => (
-                      <div key={c.id} className="contents">
-                        <dt className="text-muted-foreground">{c.header}</dt>
-                        <dd className="min-w-0 truncate">{c.cell(row)}</dd>
-                      </div>
-                    ))}
-                </dl>
-              </li>
-            ))}
-        </ul>
+        {isDesktop ? (
+          <div>
+            <Table>
+              <caption className="sr-only">{caption}</caption>
+              <TableHeader>
+                <TableRow>
+                  {columns.map((c) => (
+                    <TableHead key={c.id} className={c.className} aria-sort={ariaSort(c)}>
+                      <SortHeader column={c} sort={sort} onSortChange={onSortChange} />
+                    </TableHead>
+                  ))}
+                  {rowActions && (
+                    <TableHead className="w-12">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {showSkeleton &&
+                  Array.from({ length: 8 }, (_, i) => (
+                    <TableRow key={i}>
+                      {columns.map((c) => (
+                        <TableCell key={c.id}>
+                          <Skeleton className="h-4 w-full max-w-40" />
+                        </TableCell>
+                      ))}
+                      {rowActions && <TableCell />}
+                    </TableRow>
+                  ))}
+                {!showSkeleton &&
+                  rows.map((row) => (
+                    <TableRow key={getRowId(row)} className={rowClassName?.(row)}>
+                      {columns.map((c) => (
+                        <TableCell key={c.id} className={c.className}>
+                          {c.cell(row)}
+                        </TableCell>
+                      ))}
+                      {rowActions && (
+                        <TableCell className="text-right">{rowActions(row)}</TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <ul className="divide-y" aria-label={caption}>
+            {showSkeleton &&
+              Array.from({ length: 5 }, (_, i) => (
+                <li key={i} className="space-y-2 p-4">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-56" />
+                  <Skeleton className="h-4 w-32" />
+                </li>
+              ))}
+            {!showSkeleton &&
+              rows.map((row) => (
+                <li key={getRowId(row)} className={cn("space-y-2 p-4", rowClassName?.(row))}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
+                    {rowActions?.(row)}
+                  </div>
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                    {columns
+                      .filter((c) => c !== primary && !c.hideOnMobile)
+                      .map((c) => (
+                        <div key={c.id} className="contents">
+                          <dt className="text-muted-foreground">{c.header}</dt>
+                          <dd className="min-w-0 break-words">{c.cell(row)}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                </li>
+              ))}
+          </ul>
+        )}
 
         {!showSkeleton && rows.length === 0 && empty}
       </div>

@@ -24,13 +24,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { useLookups } from "@/features/lookups/api";
 import type { Doctor } from "@/lib/api";
-import { compact, formatDate, numberFormat, useUrlState } from "@/lib/utils";
+import { compact, formatDate, numberFormat, plural, useUrlState } from "@/lib/utils";
 import { useDoctors, useSetDoctorArchived, type DoctorListParams } from "./api";
 import { DoctorFormDialog } from "./doctor-form";
 
 function SpecializationName({ id }: { id: string }) {
   const { data } = useLookups();
-  return <>{data?.specializationName.get(id) ?? "—"}</>;
+  return <>{data?.specializationName.get(id) ?? "-"}</>;
 }
 
 // Module-level so they aren't rebuilt on every render.
@@ -174,7 +174,7 @@ export function DoctorsView() {
         title={params.archived ? "Archived doctors" : "Doctors"}
         description={
           query.data
-            ? `${numberFormat.format(query.data.meta.total)} ${params.archived ? "archived" : "active"} doctors`
+            ? plural(query.data.meta.total, `${params.archived ? "archived" : "active"} doctor`)
             : "Search, filter and manage doctors."
         }
         actions={
@@ -219,6 +219,7 @@ export function DoctorsView() {
         />
         <RangeInput
           label="Patients"
+          placeholder={["e.g. 10", "e.g. 100"]}
           min={params.minPatients}
           max={params.maxPatients}
           onChange={(r) => url.set({ minPatients: r.min, maxPatients: r.max })}

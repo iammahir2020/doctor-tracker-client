@@ -5,13 +5,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCurrentUser } from "@/features/auth/api";
 import { ApiError, type Role } from "@/lib/api";
 
@@ -86,8 +87,9 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
 }
 
 /**
- * Confirmation for archive/restore. Stays open while the action runs and shows the server's
- * message if it fails (e.g. "Reassign or archive their 3 patients first").
+ * Confirmation for archive/restore, as an alert dialog: announced as a warning, focus starts on
+ * Cancel, and it can't be dismissed by clicking outside. Stays open while the action runs and
+ * shows the server's message if it fails (e.g. "Reassign or archive their 3 patients first").
  */
 export function ConfirmDialog({
   open,
@@ -123,7 +125,7 @@ export function ConfirmDialog({
   }
 
   return (
-    <Dialog
+    <AlertDialog
       open={open}
       onOpenChange={(next) => {
         if (pending) return;
@@ -131,11 +133,11 @@ export function ConfirmDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+      <AlertDialogContent className="sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
         {error && (
           <p
             role="alert"
@@ -144,10 +146,9 @@ export function ConfirmDialog({
             {error}
           </p>
         )}
-        <DialogFooter>
-          <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          {/* A plain button, not AlertDialogAction, so the dialog stays open while it runs. */}
           <Button
             variant={destructive ? "destructive" : "default"}
             disabled={pending}
@@ -156,9 +157,9 @@ export function ConfirmDialog({
             {pending && <Loader2 className="animate-spin" aria-hidden />}
             {confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

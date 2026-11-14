@@ -2,7 +2,7 @@
 
 import { endOfDay, startOfDay, subDays, subMonths, startOfYear } from "date-fns";
 import { CalendarIcon, Check, ChevronsUpDown, Search, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,26 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn, formatDate, toDateParam, useDebounce } from "@/lib/utils";
+import { cn, formatDate, toDateParam, useDebounce, useMediaQuery } from "@/lib/utils";
 
 export type Option = { value: string; label: string };
-
-const DESKTOP_QUERY = "(min-width: 640px)";
-
-function subscribeToDesktop(onChange: () => void) {
-  const media = window.matchMedia(DESKTOP_QUERY);
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-
-/** Server renders the desktop layout; phones switch after hydration without a mismatch. */
-function useIsDesktop() {
-  return useSyncExternalStore(
-    subscribeToDesktop,
-    () => window.matchMedia(DESKTOP_QUERY).matches,
-    () => true,
-  );
-}
 
 /**
  * Search is always visible. The other filters sit inline on wider screens and in a bottom sheet
@@ -64,7 +47,8 @@ export function FilterBar({
   /** Filters other than search that are set, shown on the mobile button. */
   activeCount: number;
 }) {
-  const isDesktop = useIsDesktop();
+  // Server renders the desktop layout; phones switch after hydration.
+  const isDesktop = useMediaQuery("(min-width: 640px)", true);
   const clear = canClear && (
     <Button variant="ghost" size="sm" onClick={onClear}>
       <X aria-hidden /> Clear filters

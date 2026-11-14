@@ -25,7 +25,7 @@ import { useCurrentUser } from "@/features/auth/api";
 import { useLookups } from "@/features/lookups/api";
 import { STATUS_LABEL } from "@/features/patients/patient-form";
 import type { PatientStatus, Stats } from "@/lib/api";
-import { cn, formatDate, numberFormat, toDateParam, useUrlState } from "@/lib/utils";
+import { cn, formatDate, numberFormat, plural, toDateParam, useUrlState } from "@/lib/utils";
 import { defaultRange, previousRange, useStats, useStatsRange } from "./api";
 
 const chartFallback = () => <Skeleton className="h-60 w-full" />;
@@ -124,7 +124,7 @@ function StatCard({
         </span>
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="truncate text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+          <p className="text-2xl font-semibold tracking-tight break-words tabular-nums">{value}</p>
           {detail && <div className="mt-0.5 text-xs text-muted-foreground">{detail}</div>}
         </div>
       </CardContent>
@@ -320,7 +320,7 @@ function DashboardBody({
           <StatCard
             label="Doctors"
             value={numberFormat.format(current.totalDoctors)}
-            detail={`Across ${current.doctorsBySpecialization.length} specializations`}
+            detail={`Across ${plural(current.doctorsBySpecialization.length, "specialization")}`}
             icon={Stethoscope}
           />
           <StatCard
@@ -425,14 +425,14 @@ function DashboardBody({
             value={
               busiest && busiest.count > 0
                 ? format(parseISO(`${busiest.month}-01`), "MMM yyyy")
-                : "—"
+                : "None yet"
             }
-            detail={busiest ? `${numberFormat.format(busiest.count)} admissions` : undefined}
+            detail={busiest ? plural(busiest.count, "admission") : undefined}
             icon={TrendingUp}
           />
           <StatCard
             label="Most common condition"
-            value={topCondition ? conditionName(topCondition.condition) : "—"}
+            value={topCondition ? conditionName(topCondition.condition) : "None yet"}
             detail={
               topCondition && inRange.admissions
                 ? `${Math.round((topCondition.count / inRange.admissions) * 100)}% of admissions`
