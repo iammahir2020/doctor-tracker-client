@@ -74,6 +74,10 @@
   --viz-good: #0ca30c;
   --viz-critical: #d03b3b;
   --viz-grid: #e5e4e0;
+  /* Gender series, validated in this order (female, male, other) for colour-blind separation. */
+  --viz-female: #e87ba4;
+  --viz-male: #2a78d6;
+  --viz-other: #eb6834;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -113,6 +117,9 @@
   --viz-good: #0ca30c;
   --viz-critical: #d03b3b;
   --viz-grid: #383835;
+  --viz-female: #d55181;
+  --viz-male: #3987e5;
+  --viz-other: #d95926;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

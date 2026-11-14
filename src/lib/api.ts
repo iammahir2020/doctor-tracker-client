@@ -64,6 +64,7 @@ export type Stats = {
     activePatients: number;
     criticalPatients: number;
     avgPatientsPerDoctor: number;
+    avgPatientAge: number;
     patientsByStatus: { status: PatientStatus; count: number }[];
     doctorsBySpecialization: { specialization: string; count: number }[];
     topDoctors: { _id: string; name: string; specialization: string; patientCount: number }[];
@@ -71,7 +72,15 @@ export type Stats = {
   };
   inRange: {
     admissions: number;
-    admissionsByMonth: { month: string; count: number }[];
+    admissionsByMonth: {
+      month: string;
+      count: number;
+      male: number;
+      female: number;
+      other: number;
+    }[];
+    byAge: { label: string; count: number }[];
+    byGender: { gender: Gender; count: number }[];
     byCondition: { condition: string; count: number }[];
     byStatus: { status: PatientStatus; count: number }[];
   };

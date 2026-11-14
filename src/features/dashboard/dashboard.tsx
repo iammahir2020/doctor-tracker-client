@@ -4,9 +4,8 @@ import { format, parseISO, startOfMonth, startOfYear, subDays, subMonths } from 
 import {
   Activity,
   AlertTriangle,
-  ArrowDownRight,
   ArrowRight,
-  ArrowUpRight,
+  Cake,
   CalendarRange,
   HeartPulse,
   RefreshCw,
@@ -16,25 +15,31 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ErrorState } from "@/components/common";
+import { ErrorState, InitialsAvatar } from "@/components/common";
 import { DateRangePicker } from "@/components/filters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/features/auth/api";
 import { useLookups } from "@/features/lookups/api";
+import { usePatients } from "@/features/patients/api";
 import { STATUS_LABEL } from "@/features/patients/patient-form";
+import { StatusBadge } from "@/features/patients/patients-table";
 import type { PatientStatus, Stats } from "@/lib/api";
 import { cn, formatDate, numberFormat, plural, toDateParam, useUrlState } from "@/lib/utils";
 import { defaultRange, previousRange, useStats, useStatsRange } from "./api";
 
 const chartFallback = () => <Skeleton className="h-60 w-full" />;
 // Recharts loads on demand, after the figures above it have rendered.
-const AdmissionsChart = dynamic(() => import("./charts").then((m) => m.AdmissionsChart), {
+const AdmissionsTrend = dynamic(() => import("./charts").then((m) => m.AdmissionsTrend), {
   ssr: false,
   loading: chartFallback,
 });
-const HorizontalBarChart = dynamic(() => import("./charts").then((m) => m.HorizontalBarChart), {
+const ConditionRadar = dynamic(() => import("./charts").then((m) => m.ConditionRadar), {
+  ssr: false,
+  loading: chartFallback,
+});
+const RankedBars = dynamic(() => import("./charts").then((m) => m.RankedBars), {
   ssr: false,
   loading: chartFallback,
 });
@@ -105,6 +110,8 @@ function StatCard({
   icon: Icon,
   tone = "series",
   className,
+  pill,
+  wordValue = false,
 }: {
   label: string;
   value: React.ReactNode;
@@ -112,6 +119,10 @@ function StatCard({
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   tone?: keyof typeof TONES;
   className?: string;
+  /** Small status pill in the corner, e.g. the change against the previous period. */
+  pill?: { text: string; tone: "up" | "down" | "neutral" };
+  /** A word rather than a number: a size smaller on phones so it fits without splitting. */
+  wordValue?: boolean;
 }) {
   const color = TONES[tone];
   return (
@@ -124,9 +135,28 @@ function StatCard({
         >
           <Icon className="size-4 sm:size-4.5" style={{ color }} />
         </span>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
-          <p className="text-lg leading-tight font-semibold tracking-tight break-words tabular-nums sm:text-2xl">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
+            {pill && (
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums sm:text-[11px]",
+                  pill.tone === "up" && "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+                  pill.tone === "down" && "bg-red-500/12 text-red-700 dark:text-red-300",
+                  pill.tone === "neutral" && "bg-muted text-muted-foreground",
+                )}
+              >
+                {pill.text}
+              </span>
+            )}
+          </div>
+          <p
+            className={cn(
+              "leading-tight font-semibold tracking-tight tabular-nums sm:text-2xl",
+              wordValue ? "text-base" : "text-lg",
+            )}
+          >
             {value}
           </p>
           {detail && (
@@ -144,18 +174,25 @@ function ChartCard({
   title,
   subtitle,
   className,
+  headerExtra,
   children,
 }: {
   title: string;
   subtitle: string;
   className?: string;
+  headerExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <Card className={cn("gap-3 py-4 sm:gap-4 sm:py-6", className)}>
       <CardHeader className="px-4 sm:px-6">
-        <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">{subtitle}</CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div>
+            <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{subtitle}</CardDescription>
+          </div>
+          {headerExtra}
+        </div>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">{children}</CardContent>
     </Card>
@@ -188,25 +225,6 @@ function Section({
       </div>
       {children}
     </section>
-  );
-}
-
-/** Change vs the previous period, e.g. "▲ 12% vs previous 30 days". */
-function Delta({ current, previous }: { current: number; previous: number | undefined }) {
-  if (previous === undefined) return <span>Comparing…</span>;
-  if (previous === 0) return <span>No admissions in the previous period</span>;
-  const pct = Math.round(((current - previous) / previous) * 100);
-  // A huge jump usually means the earlier period has little data; a raw count is more honest.
-  if (Math.abs(pct) > 500) {
-    return <span>{numberFormat.format(previous)} in the previous period</span>;
-  }
-  const Icon = pct >= 0 ? ArrowUpRight : ArrowDownRight;
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      <Icon className="size-3.5" aria-hidden />
-      <span className="font-medium text-foreground">{Math.abs(pct)}%</span>
-      {pct >= 0 ? " more" : " fewer"} than the previous period
-    </span>
   );
 }
 
@@ -295,6 +313,135 @@ function DashboardSkeleton() {
   );
 }
 
+/** "+12%" against the previous period of the same length, or nothing when it isn't meaningful. */
+function changePill(current: number, previous: number | undefined) {
+  if (previous === undefined || previous === 0) return undefined;
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (Math.abs(pct) > 500) return undefined; // the earlier period has too little data to compare
+  return {
+    text: `${pct >= 0 ? "+" : ""}${pct}%`,
+    tone: pct > 0 ? ("up" as const) : pct < 0 ? ("down" as const) : ("neutral" as const),
+  };
+}
+
+function GenderLegend({ totals }: { totals: Stats["inRange"]["byGender"] }) {
+  const all = totals.reduce((sum, g) => sum + g.count, 0);
+  const byKey = new Map(totals.map((g) => [g.gender, g.count]));
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Series">
+      {GENDER_LEGEND.map((g) => (
+        <li key={g.key} className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "h-2 w-4 rounded-full",
+              g.key === "other" && "h-0.5 border-t-2 border-dashed bg-transparent",
+            )}
+            style={g.key === "other" ? { borderColor: g.color } : { background: g.color }}
+            aria-hidden
+          />
+          <span className="text-muted-foreground">{g.label}</span>
+          <span className="font-medium tabular-nums">
+            {all ? Math.round(((byKey.get(g.key) ?? 0) / all) * 100) : 0}%
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Mirrors GENDER_SERIES in charts.tsx (kept here so the legend renders without loading Recharts).
+const GENDER_LEGEND = [
+  { key: "female", label: "Female", color: "var(--viz-female)" },
+  { key: "male", label: "Male", color: "var(--viz-male)" },
+  { key: "other", label: "Other", color: "var(--viz-other)" },
+] as const;
+
+/** Ranked conditions with share bars; each opens the patients list filtered to it. */
+function ConditionList({
+  rows,
+  total,
+}: {
+  rows: { key: string; label: string; value: number }[];
+  total: number;
+}) {
+  return (
+    <ul className="space-y-2.5">
+      {rows.map((r) => {
+        const pct = total ? Math.round((r.value / total) * 100) : 0;
+        return (
+          <li key={r.key}>
+            <Link
+              href={`/patients?condition=${r.key}`}
+              className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="truncate font-medium group-hover:underline">{r.label}</span>
+                <span className="shrink-0 tabular-nums">
+                  <span className="font-semibold">{pct}%</span>
+                  <span className="ml-1.5 text-xs text-muted-foreground">
+                    {numberFormat.format(r.value)}
+                  </span>
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                <div className="h-full rounded-full bg-primary/70" style={{ width: `${pct}%` }} />
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** The latest admissions, each opening the patient panel. */
+function RecentAdmissions() {
+  const { data, isPending } = usePatients({
+    sort: "admissionDate",
+    order: "desc",
+    page: 1,
+    pageSize: 6,
+  });
+  const { data: lookups } = useLookups();
+
+  if (isPending) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} className="h-11 w-full" />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <ul className="-mx-2 divide-y">
+      {data?.data.map((p) => (
+        <li key={p._id}>
+          <Link
+            href={`/patients?patient=${p._id}`}
+            className="flex items-center gap-3 rounded-md px-2 py-2.5 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <InitialsAvatar name={p.name} className="size-8" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{p.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {lookups?.conditionName.get(p.condition) ?? "Unknown"}
+                {p.doctorName ? ` · ${p.doctorName}` : ""}
+              </span>
+            </span>
+            <span className="shrink-0 text-right">
+              <StatusBadge status={p.status} />
+              <span className="mt-1 block text-[11px] text-muted-foreground">
+                {format(parseISO(p.admissionDate), "d MMM")}
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function DashboardBody({
   stats,
   previous,
@@ -309,7 +456,7 @@ function DashboardBody({
   const specializationName = (id: string) => lookups?.specializationName.get(id) ?? "Unknown";
   const conditionName = (id: string) => lookups?.conditionName.get(id) ?? "Unknown";
   // The selected dates, not the server's UTC end-of-day timestamp (which can read as the next day).
-  const rangeText = `${formatDate(range.from)} – ${formatDate(range.to)}`;
+  const rangeText = `${formatDate(range.from)} - ${formatDate(range.to)}`;
 
   const busiest = inRange.admissionsByMonth.reduce<{ month: string; count: number } | null>(
     (best, m) => (!best || m.count > best.count ? m : best),
@@ -319,6 +466,13 @@ function DashboardBody({
   const criticalShare = current.activePatients
     ? Math.round((current.criticalPatients / current.activePatients) * 100)
     : 0;
+  const female = inRange.byGender.find((g) => g.gender === "female")?.count ?? 0;
+  const femaleShare = inRange.admissions ? Math.round((female / inRange.admissions) * 100) : 0;
+  const conditionRows = inRange.byCondition.map((c) => ({
+    key: c.condition,
+    label: conditionName(c.condition),
+    value: c.count,
+  }));
 
   return (
     <div className="space-y-7 sm:space-y-10">
@@ -327,7 +481,7 @@ function DashboardBody({
         title="Right now"
         description="Live totals across all active doctors and patients."
       >
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
           <StatCard
             label="Doctors"
             value={numberFormat.format(current.totalDoctors)}
@@ -343,15 +497,23 @@ function DashboardBody({
           <StatCard
             label="Critical"
             value={numberFormat.format(current.criticalPatients)}
-            detail={`${criticalShare}% of active patients`}
+            detail="Need attention now"
+            pill={{ text: `${criticalShare}%`, tone: criticalShare > 15 ? "down" : "neutral" }}
             icon={AlertTriangle}
             tone="critical"
           />
           <StatCard
-            label="Patients per doctor"
+            label="Per doctor"
             value={current.avgPatientsPerDoctor.toLocaleString("en-US")}
             detail="Average caseload"
             icon={Activity}
+          />
+          <StatCard
+            className="col-span-2 lg:col-span-1"
+            label="Average age"
+            value={`${current.avgPatientAge.toLocaleString("en-US")} yrs`}
+            detail="Active patients"
+            icon={Cake}
           />
         </div>
 
@@ -378,7 +540,7 @@ function DashboardBody({
             subtitle="Top 10 by active patients · click a bar to open"
             className="lg:col-span-3"
           >
-            <HorizontalBarChart
+            <RankedBars
               caption="Top 10 doctors by active patients"
               unit="patients"
               href={(id) => `/doctors/${id}`}
@@ -405,7 +567,7 @@ function DashboardBody({
             />
           </ChartCard>
           <ChartCard title="Doctors by specialization" subtitle="Active doctors">
-            <HorizontalBarChart
+            <RankedBars
               caption="Doctors by specialization"
               unit="doctors"
               data={current.doctorsBySpecialization.map((s) => ({
@@ -424,14 +586,20 @@ function DashboardBody({
         description={`Patients admitted ${rangeText}. The date range only affects this section.`}
         actions={<RangeControls range={range} />}
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             label="Admissions"
             value={numberFormat.format(inRange.admissions)}
-            detail={<Delta current={inRange.admissions} previous={previous?.inRange.admissions} />}
+            pill={changePill(inRange.admissions, previous?.inRange.admissions)}
+            detail={
+              previous
+                ? `${numberFormat.format(previous.inRange.admissions)} in the previous period`
+                : "Comparing…"
+            }
             icon={CalendarRange}
           />
           <StatCard
+            wordValue
             label="Busiest month"
             value={
               busiest && busiest.count > 0
@@ -442,8 +610,8 @@ function DashboardBody({
             icon={TrendingUp}
           />
           <StatCard
-            className="col-span-2 sm:col-span-1"
-            label="Most common condition"
+            wordValue
+            label="Top condition"
             value={topCondition ? conditionName(topCondition.condition) : "None yet"}
             detail={
               topCondition && inRange.admissions
@@ -452,29 +620,62 @@ function DashboardBody({
             }
             icon={HeartPulse}
           />
+          <StatCard
+            label="Female share"
+            value={`${femaleShare}%`}
+            detail={`${numberFormat.format(female)} of ${numberFormat.format(inRange.admissions)} admissions`}
+            icon={UsersRound}
+            tone="series"
+          />
         </div>
 
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
           <ChartCard
             title="Admissions per month"
-            subtitle="Dashed line is the monthly average"
+            subtitle="Split by gender"
             className="lg:col-span-3"
+            headerExtra={<GenderLegend totals={inRange.byGender} />}
           >
-            <AdmissionsChart data={inRange.admissionsByMonth} />
+            <AdmissionsTrend data={inRange.admissionsByMonth} />
           </ChartCard>
           <ChartCard
-            title="By condition"
-            subtitle="Patients admitted in this range"
+            title="Recent admissions"
+            subtitle="Latest patients · click to open"
+            className="lg:col-span-2"
+            headerExtra={
+              <Button variant="link" size="sm" className="h-auto px-0" asChild>
+                <Link href="/patients">View all</Link>
+              </Button>
+            }
+          >
+            <RecentAdmissions />
+          </ChartCard>
+        </div>
+
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
+          <ChartCard
+            title="Conditions"
+            subtitle="Share of admissions in this range · click one to see its patients"
+            className="lg:col-span-3"
+          >
+            {conditionRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No admissions in this range.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 sm:items-center">
+                <ConditionRadar data={conditionRows} />
+                <ConditionList rows={conditionRows.slice(0, 6)} total={inRange.admissions} />
+              </div>
+            )}
+          </ChartCard>
+          <ChartCard
+            title="Age groups"
+            subtitle="Patients admitted in this range, by age today"
             className="lg:col-span-2"
           >
-            <HorizontalBarChart
-              caption="Admissions by condition"
+            <ColumnChart
+              caption="Admissions by age group"
               unit="patients"
-              data={inRange.byCondition.map((c) => ({
-                key: c.condition,
-                label: conditionName(c.condition),
-                value: c.count,
-              }))}
+              data={inRange.byAge.map((a) => ({ key: a.label, label: a.label, value: a.count }))}
             />
           </ChartCard>
         </div>
