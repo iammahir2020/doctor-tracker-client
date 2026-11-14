@@ -136,14 +136,21 @@ function readError(data: unknown): { code: string; message: string; details: unk
   return { code: "UNKNOWN", message: "Something went wrong. Please try again.", details: null };
 }
 
-async function sendToLogin() {
+// Several requests can fail at once; only the first one (which knows the real reason) redirects.
+let redirecting = false;
+
+async function sendToLogin(reason?: string) {
+  if (redirecting) return;
+  redirecting = true;
   // The cookie is httpOnly, so ask the server to clear it; otherwise proxy.ts would bounce
   // the user straight back from /login to the page that just failed.
   await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   const next = window.location.pathname + window.location.search;
+  const query = new URLSearchParams({ next });
+  if (reason) query.set("reason", reason);
   // A full page load (not router.push) so every cached query from the old session is dropped.
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-  window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+  window.location.assign(`/login?${query.toString()}`);
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
@@ -172,7 +179,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   if (!res.ok) {
     const { code, message, details } = readError(data);
     if (res.status === 401 && redirectOn401 && window.location.pathname !== "/login") {
-      await sendToLogin();
+      await sendToLogin(code === "ACCOUNT_ARCHIVED" ? "archived" : undefined);
     }
     throw new ApiError(res.status, code, message, details);
   }

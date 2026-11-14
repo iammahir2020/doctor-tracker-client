@@ -20,6 +20,9 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const NOTICE_CLASS =
+  "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400";
+
 /** Only same-site relative paths, so ?next= can't be used to redirect off-site. */
 function safeNext(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
@@ -42,6 +45,12 @@ export function LoginForm() {
   });
 
   const error = login.error instanceof ApiError ? login.error : null;
+  // Set when an existing session was ended because the account was archived.
+  const archivedNotice =
+    !error && searchParams.get("reason") === "archived"
+      ? "Your account has been archived. Please contact an administrator to restore access."
+      : null;
+  const notice = error?.code === "ACCOUNT_ARCHIVED" ? error.message : archivedNotice;
 
   return (
     <Card>
@@ -101,17 +110,19 @@ export function LoginForm() {
             )}
           </div>
 
-          {error && (
-            <p
-              role="alert"
-              className={
-                error.status === 429
-                  ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
-                  : "text-sm text-destructive"
-              }
-            >
-              {error.status === 401 ? "Invalid email or password." : error.message}
+          {notice ? (
+            <p role="alert" className={NOTICE_CLASS}>
+              {notice}
             </p>
+          ) : (
+            error && (
+              <p
+                role="alert"
+                className={error.status === 429 ? NOTICE_CLASS : "text-sm text-destructive"}
+              >
+                {error.status === 401 ? "Invalid email or password." : error.message}
+              </p>
+            )
           )}
 
           <Button type="submit" className="w-full" disabled={login.isPending}>
