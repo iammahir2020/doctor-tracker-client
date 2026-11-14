@@ -24,9 +24,18 @@ type FormValues = z.infer<typeof schema>;
 const NOTICE_CLASS =
   "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400";
 
-/** Only same-site relative paths, so ?next= can't be used to redirect off-site. */
+/**
+ * Only same-origin paths, so ?next= can't be used to redirect off-site. Checking the string's
+ * prefix isn't enough: browsers read "/\evil.com" and "/<tab>/evil.com" as another host.
+ */
 function safeNext(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
+  if (!value) return "/";
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
 }
 
 export function LoginForm() {
