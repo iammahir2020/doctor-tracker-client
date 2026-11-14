@@ -33,7 +33,7 @@ Requires Node 24 (`nvm use` reads `.nvmrc`) and Docker.
    cp .env.example .env    # works as-is with the local database
    docker compose up -d    # MongoDB 8 as a single-node replica set
    npm install
-   npm run seed            # admin + staff users, 50 doctors, 3,000 patients
+   npm run seed            # Bangladeshi demo data: admin + staff, 50 doctors, 3,000 patients
    npm run dev             # http://localhost:4000
    ```
 3. Start the client (in `doctor-tracker-client`):
@@ -57,7 +57,8 @@ flowchart LR
 
 - **Sign-in:** the browser posts to `/api/auth/login` on the Vercel domain; Next.js rewrites it to
   the API, which checks the password and sets a session cookie. `proxy.ts` sends anyone without the
-  cookie to `/login`.
+  cookie to `/login`, and back to the page they asked for afterwards (same-origin paths only).
+  Changing the password signs every session out, so the app asks you to sign in again.
 - **Lists:** filters, sort and page live in the URL. Changing one changes the TanStack Query key, which
   fetches `/api/doctors?...`; the API runs one indexed query plus a count and returns a page.
 - **Changes:** an edit or archive updates the screen straight away, calls the API (patient writes and
@@ -98,6 +99,15 @@ Other choices, briefly: **archive instead of delete** (the app moves a doctor's 
 archiving them); a **denormalised `patientCount`** kept in sync by transactions; **case-insensitive
 "contains" search** on lower-cased fields, with every list index starting with `isArchived` (details and
 `explain()` results in the server README).
+
+### Script injection
+
+User data is only ever rendered as React text, never as HTML, and links built from stored values have
+fixed `mailto:`, `tel:` or `/doctors/<id>` prefixes. On top of that, `proxy.ts` sends a strict
+Content-Security-Policy with a fresh nonce per request: only scripts carrying that nonce (Next.js adds
+it to its own) can run, so injected markup couldn't execute even if it reached a page. The API also
+rejects `<` and `>` in names and other one-line fields. Styles still allow `'unsafe-inline'`, because
+Radix and Recharts position elements with style attributes.
 
 ## Scalability
 
