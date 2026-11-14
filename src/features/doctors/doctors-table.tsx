@@ -105,7 +105,7 @@ function useDoctorParams(): DoctorListParams {
   };
 }
 
-export function DoctorRowActions({
+function DoctorRowActions({
   doctor,
   onEdit,
 }: {
