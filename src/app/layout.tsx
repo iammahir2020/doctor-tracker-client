@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -26,7 +27,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Set by proxy.ts; next-themes' inline theme script needs it to pass the CSP.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // next-themes sets the theme class before hydration, which React would otherwise flag.
     <html
@@ -35,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <Providers>{children}</Providers>
+        <Providers nonce={nonce}>{children}</Providers>
       </body>
     </html>
   );

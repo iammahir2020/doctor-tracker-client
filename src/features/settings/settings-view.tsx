@@ -270,7 +270,7 @@ function LookupList({
     mutation.error instanceof ApiError
       ? mutation.error.status === 409
         ? `That ${singular} already exists`
-        : mutation.error.message
+        : (fieldErrors(mutation.error).name ?? mutation.error.message)
       : null;
 
   return (

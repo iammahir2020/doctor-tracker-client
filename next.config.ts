@@ -15,6 +15,18 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // The CSP is set per request in proxy.ts (it needs a nonce); these apply to every response.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },

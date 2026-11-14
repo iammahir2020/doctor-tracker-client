@@ -21,11 +21,17 @@ function makeQueryClient() {
   });
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, nonce }: { children: React.ReactNode; nonce?: string }) {
   const [queryClient] = useState(makeQueryClient);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      nonce={nonce}
+    >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
         <Toaster richColors closeButton position="top-right" />
