@@ -54,7 +54,7 @@ function NavLinks({
   onNavigate,
 }: {
   collapsed?: boolean;
-  onNavigate?: () => void;
+  onNavigate?: (href: string) => void;
 }) {
   const pathname = usePathname();
   const me = useCurrentUser();
@@ -68,7 +68,7 @@ function NavLinks({
           <Link
             key={href}
             href={href}
-            onClick={onNavigate}
+            onClick={() => onNavigate?.(href)}
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors outline-none",
@@ -157,6 +157,15 @@ function UserMenu() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close the mobile menu once the new page has arrived, not on tap: closing on tap ran the
+  // slide-out animation at the same moment as the new page's render, which made it stutter.
+  const [renderedPath, setRenderedPath] = useState(pathname);
+  if (pathname !== renderedPath) {
+    setRenderedPath(pathname);
+    setMobileOpen(false);
+  }
 
   return (
     <div className="flex min-h-svh">
@@ -212,7 +221,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </SheetTitle>
               </SheetHeader>
-              <NavLinks onNavigate={() => setMobileOpen(false)} />
+              <NavLinks
+                onNavigate={(href) => {
+                  // Same page: nothing will load, so close straight away.
+                  if (href === pathname) setMobileOpen(false);
+                }}
+              />
             </SheetContent>
           </Sheet>
           <div className="md:hidden">

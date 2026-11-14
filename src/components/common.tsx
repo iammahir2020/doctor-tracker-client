@@ -4,6 +4,7 @@ import { AlertTriangle, Loader2, SearchX } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
@@ -220,5 +221,26 @@ export function InitialsAvatar({ name, className }: { name: string; className?: 
         {initials(name)}
       </AvatarFallback>
     </Avatar>
+  );
+}
+
+/**
+ * Page-shaped placeholder: used by the route's loading.tsx and as the Suspense fallback inside
+ * each page, so a navigation never shows an empty page while the client view loads.
+ */
+export function PageSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-72 max-w-full" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+      <div className="space-y-2">
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
+      </div>
+    </div>
   );
 }

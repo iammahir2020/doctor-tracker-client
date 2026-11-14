@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
+import { PageSkeleton } from "@/components/common";
 import { DoctorDetail } from "@/features/doctors/doctor-detail";
 
 const apiUrl = (process.env.API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps<"/doctors/[id]">): 
 export default async function DoctorPage({ params }: PageProps<"/doctors/[id]">) {
   const { id } = await params;
   return (
-    <Suspense>
+    <Suspense fallback={<PageSkeleton />}>
       <DoctorDetail id={id} />
     </Suspense>
   );
