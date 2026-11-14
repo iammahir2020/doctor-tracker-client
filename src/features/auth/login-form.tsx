@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { PasswordInput } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,12 +62,15 @@ export function LoginForm() {
   });
 
   const error = login.error instanceof ApiError ? login.error : null;
-  // Set when an existing session was ended because the account was archived.
-  const archivedNotice =
-    !error && searchParams.get("reason") === "archived"
+  // Set when an existing session was ended: the account was archived, or the password changed.
+  const reason = error ? null : searchParams.get("reason");
+  const reasonNotice =
+    reason === "archived"
       ? "Your account has been archived. Please contact an administrator to restore access."
-      : null;
-  const notice = error?.code === "ACCOUNT_ARCHIVED" ? error.message : archivedNotice;
+      : reason === "password-changed"
+        ? "Your password was changed. Please sign in again with your new password."
+        : null;
+  const notice = error?.code === "ACCOUNT_ARCHIVED" ? error.message : reasonNotice;
 
   return (
     <>
@@ -93,9 +97,8 @@ export function LoginForm() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 aria-invalid={!!errors.password}
                 aria-describedby={errors.password ? "password-error" : undefined}

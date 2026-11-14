@@ -1,9 +1,10 @@
 "use client";
 
-import { AlertTriangle, Loader2, SearchX } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Loader2, SearchX } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
@@ -170,6 +171,31 @@ export function ConfirmDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+/** Password input with a show/hide toggle, so people can check what they typed. */
+export function PasswordInput({
+  className,
+  ...props
+}: Omit<React.ComponentProps<typeof Input>, "type">) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input {...props} type={visible ? "text" : "password"} className={cn("pr-10", className)} />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-1/2 right-0.5 -translate-y-1/2 text-muted-foreground"
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        aria-controls={props.id}
+        onClick={() => setVisible((v) => !v)}
+      >
+        {visible ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
+      </Button>
+    </div>
   );
 }
 

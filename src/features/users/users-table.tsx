@@ -5,7 +5,14 @@ import { Archive, ArchiveRestore, Loader2, MoreHorizontal, Pencil, Plus } from "
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { ConfirmDialog, EmptyState, Field, InitialsAvatar, PageHeader } from "@/components/common";
+import {
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  InitialsAvatar,
+  PageHeader,
+  PasswordInput,
+} from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
 import { FilterBar, SearchInput, SelectFilter, ShowArchivedToggle } from "@/components/filters";
 import { Badge } from "@/components/ui/badge";
@@ -209,9 +216,8 @@ function UserFormDialog({
                 />
               </Field>
               <Field label="Temporary password" id="u-password" error={errors.password?.message}>
-                <Input
+                <PasswordInput
                   id="u-password"
-                  type="password"
                   autoComplete="new-password"
                   aria-invalid={!!errors.password}
                   {...register("password")}

@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { createContext, createElement, useContext, useSyncExternalStore } from "react";
-import { toast } from "sonner";
 import { api, type Role, type User } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
@@ -83,10 +82,16 @@ export function useLogout() {
   });
 }
 
+/** The server ends every session on a password change, this one included, so sign in again. */
 export function useChangePassword() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   return useMutation({
     mutationFn: (body: { currentPassword: string; newPassword: string }) =>
       api<void>("/auth/me/password", { method: "PATCH", body }),
-    onSuccess: () => toast.success("Password changed"),
+    onSuccess: () => {
+      queryClient.clear();
+      router.replace("/login?reason=password-changed");
+    },
   });
 }

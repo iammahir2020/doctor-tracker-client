@@ -5,7 +5,7 @@ import { Archive, ArchiveRestore, Check, Loader2, Pencil, Plus, X } from "lucide
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Field, PageHeader } from "@/components/common";
+import { Field, PageHeader, PasswordInput } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,18 +106,16 @@ function AccountTab() {
               id="current-password"
               error={errors.currentPassword?.message}
             >
-              <Input
+              <PasswordInput
                 id="current-password"
-                type="password"
                 autoComplete="current-password"
                 aria-invalid={!!errors.currentPassword}
                 {...register("currentPassword")}
               />
             </Field>
             <Field label="New password" id="new-password" error={errors.newPassword?.message}>
-              <Input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 autoComplete="new-password"
                 aria-invalid={!!errors.newPassword}
                 {...register("newPassword")}
@@ -128,9 +126,8 @@ function AccountTab() {
               id="confirm-password"
               error={errors.confirmPassword?.message}
             >
-              <Input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 autoComplete="new-password"
                 aria-invalid={!!errors.confirmPassword}
                 {...register("confirmPassword")}
