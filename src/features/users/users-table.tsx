@@ -5,7 +5,7 @@ import { Archive, ArchiveRestore, Loader2, MoreHorizontal, Pencil, Plus } from "
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { ConfirmDialog, EmptyState, Field, PageHeader } from "@/components/common";
+import { ConfirmDialog, EmptyState, Field, InitialsAvatar, PageHeader } from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
 import { FilterBar, SearchInput, SelectFilter, ShowArchivedToggle } from "@/components/filters";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +77,24 @@ const COLUMNS: Column<ManagedUser>[] = [
 ];
 
 const FILTER_KEYS = ["search", "role"] as const;
+
+function UserMobileRow({ user }: { user: ManagedUser }) {
+  return (
+    <div className="flex min-w-0 gap-3">
+      <InitialsAvatar name={user.name} className="size-9" />
+      <div className="min-w-0 space-y-0.5">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-medium">{user.name}</span>
+          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+            {ROLE_LABEL[user.role]}
+          </Badge>
+          {user.isArchived && <Badge variant="outline">Archived</Badge>}
+        </p>
+        <p className="text-xs [overflow-wrap:anywhere] text-muted-foreground">{user.email}</p>
+      </div>
+    </div>
+  );
+}
 
 // ---------- dialogs ----------
 
@@ -385,6 +403,7 @@ function UsersList() {
         onPageChange={(page) => url.set({ page })}
         onPageSizeChange={(pageSize) => url.set({ pageSize })}
         rowActions={(u) => <UserRowActions user={u} onEdit={openForm} />}
+        renderMobileRow={(u) => <UserMobileRow user={u} />}
         rowClassName={(u) => cn(u.isArchived && "text-muted-foreground")}
         empty={
           <EmptyState

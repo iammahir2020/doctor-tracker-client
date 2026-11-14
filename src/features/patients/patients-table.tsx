@@ -92,6 +92,30 @@ function ConditionName({ id }: { id: string }) {
   return <>{data?.conditionName.get(id) ?? "-"}</>;
 }
 
+/** Phone layout: three short lines instead of a label/value list of every column. */
+function PatientMobileRow({ patient, showDoctor }: { patient: Patient; showDoctor: boolean }) {
+  return (
+    <div className="flex min-w-0 gap-3">
+      <InitialsAvatar name={patient.name} className="size-9" />
+      <div className="min-w-0 space-y-0.5">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <PatientLink patient={patient} />
+          <StatusBadge status={patient.status} />
+          {patient.isArchived && <Badge variant="outline">Archived</Badge>}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {ageFrom(patient.dateOfBirth)} · {GENDER_LABEL[patient.gender]} ·{" "}
+          <ConditionName id={patient.condition} />
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {showDoctor && patient.doctorName ? `${patient.doctorName} · ` : "Admitted "}
+          <span className="whitespace-nowrap">{formatDate(patient.admissionDate)}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // Module-level so they aren't rebuilt on every render.
 const COLUMNS: Column<Patient>[] = [
   {
@@ -462,6 +486,7 @@ export function PatientsTable({
 
       <DataTable
         onRowClick={(p) => openPatient(p._id)}
+        renderMobileRow={(p) => <PatientMobileRow patient={p} showDoctor={!doctor} />}
         caption={doctor ? `Patients of ${doctor.name}` : "Patients"}
         columns={doctor ? COLUMNS_FOR_DOCTOR : COLUMNS}
         data={query.data}

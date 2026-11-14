@@ -18,7 +18,7 @@ import {
   YAxis,
   type TooltipContentProps,
 } from "recharts";
-import { numberFormat } from "@/lib/utils";
+import { numberFormat, useMediaQuery } from "@/lib/utils";
 
 const AXIS = { fontSize: 12, fill: "var(--muted-foreground)" } as const;
 const SERIES = "var(--viz-series)";
@@ -79,7 +79,7 @@ export function AdmissionsChart({ data }: { data: { month: string; count: number
   const average = data.length ? data.reduce((sum, d) => sum + d.count, 0) / data.length : 0;
   return (
     <>
-      <div className="h-72" aria-hidden>
+      <div className="h-52 sm:h-72" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 16, right: 12, left: -12, bottom: 0 }}>
             <defs>
@@ -151,7 +151,11 @@ export function HorizontalBarChart({
   href?: (key: string) => string;
 }) {
   const router = useRouter();
-  const height = Math.max(160, data.length * 32 + 16);
+  // Rendered client-only (next/dynamic, ssr: false), so reading the screen width here is safe.
+  const wide = useMediaQuery("(min-width: 640px)", true);
+  const rowHeight = wide ? 32 : 26;
+  const height = Math.max(140, data.length * rowHeight + 16);
+  const maxChars = wide ? 24 : 12;
 
   return (
     <>
@@ -170,9 +174,13 @@ export function HorizontalBarChart({
               tick={AXIS}
               tickLine={false}
               axisLine={false}
-              width={175}
+              width={wide ? 175 : 112}
               interval={0}
-              tickFormatter={(v: string) => (v.length > 24 ? `${v.slice(0, 23)}…` : v)}
+              tickFormatter={(value: string) => {
+                // On phones the "Dr." prefix costs space every row; the tooltip keeps the full name.
+                const v = wide ? value : value.replace(/^Dr\.\s+/, "");
+                return v.length > maxChars ? `${v.slice(0, maxChars - 1)}…` : v;
+              }}
             />
             <Tooltip
               cursor={{ fill: "var(--muted)", opacity: 0.6 }}
@@ -218,7 +226,7 @@ export function ColumnChart({
 }) {
   return (
     <>
-      <div className="h-60" aria-hidden>
+      <div className="h-44 sm:h-60" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 20, right: 8, left: 8, bottom: 0 }}>
             <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} />

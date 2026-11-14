@@ -35,6 +35,35 @@ function SpecializationName({ id }: { id: string }) {
   return <>{data?.specializationName.get(id) ?? "-"}</>;
 }
 
+/** Phone layout: three short lines instead of a label/value list of every column. */
+function DoctorMobileRow({ doctor }: { doctor: Doctor }) {
+  return (
+    <div className="flex min-w-0 gap-3">
+      <InitialsAvatar name={doctor.name} className="size-9" />
+      <div className="min-w-0 space-y-0.5">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Link
+            href={`/doctors/${doctor._id}`}
+            className="font-medium hover:underline focus-visible:underline focus-visible:outline-none"
+          >
+            {doctor.name}
+          </Link>
+          {doctor.isArchived && <Badge variant="outline">Archived</Badge>}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <SpecializationName id={doctor.specialization} /> · {doctor.hospital}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground tabular-nums">
+            {plural(doctor.patientCount, "patient")}
+          </span>{" "}
+          · Added {formatDate(doctor.createdAt)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // Module-level so they aren't rebuilt on every render.
 const COLUMNS: Column<Doctor>[] = [
   {
@@ -277,6 +306,7 @@ export function DoctorsView() {
 
       <DataTable
         onRowClick={(d) => router.push(`/doctors/${d._id}`)}
+        renderMobileRow={(d) => <DoctorMobileRow doctor={d} />}
         caption="Doctors"
         columns={COLUMNS}
         data={query.data}

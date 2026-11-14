@@ -80,9 +80,9 @@ export function DoctorDetail({ id }: { id: string }) {
       {back}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
-          <InitialsAvatar name={doctor.name} className="size-14 text-lg" />
+          <InitialsAvatar name={doctor.name} className="size-11 text-base sm:size-14 sm:text-lg" />
           <div className="min-w-0 space-y-1.5">
-            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
+            <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
               {doctor.name}
               {doctor.isArchived && <Badge variant="outline">Archived</Badge>}
             </h1>
@@ -216,14 +216,14 @@ function DoctorStats({ doctor }: { doctor: Doctor }) {
   ];
 
   return (
-    <dl className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <dl className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:gap-3 lg:grid-cols-4">
       {tiles.map((t) => (
-        <Card key={t.label} className="gap-1 py-4">
-          <CardContent className="px-4">
-            <dt className="text-sm text-muted-foreground">{t.label}</dt>
+        <Card key={t.label} className="gap-1 py-3 sm:py-4">
+          <CardContent className="px-3 sm:px-4">
+            <dt className="text-xs text-muted-foreground sm:text-sm">{t.label}</dt>
             <dd
               className={cn(
-                "mt-1 text-2xl font-semibold tracking-tight tabular-nums",
+                "mt-0.5 text-lg font-semibold tracking-tight tabular-nums sm:mt-1 sm:text-2xl",
                 t.critical && "text-[var(--viz-critical)]",
               )}
             >

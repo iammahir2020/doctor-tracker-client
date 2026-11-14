@@ -57,6 +57,11 @@ type DataTableProps<T> = {
    * screen-reader path, so clicks that land on any interactive element are left alone.
    */
   onRowClick?: (row: T) => void;
+  /**
+   * Compact 2-3 line layout for phones. Without it, phones get a label/value list of every
+   * column, which is tall and shows only a couple of records per screen.
+   */
+  renderMobileRow?: (row: T) => React.ReactNode;
   empty: React.ReactNode;
   caption: string;
 };
@@ -110,6 +115,7 @@ export function DataTable<T>({
   rowActions,
   rowClassName,
   onRowClick,
+  renderMobileRow,
   empty,
   caption,
 }: DataTableProps<T>) {
@@ -181,11 +187,14 @@ export function DataTable<T>({
               </Table>
             </div>
             <ul className="divide-y md:hidden" aria-hidden>
-              {Array.from({ length: 5 }, (_, i) => (
-                <li key={i} className="space-y-2 p-4">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-56" />
-                  <Skeleton className="h-4 w-32" />
+              {Array.from({ length: 8 }, (_, i) => (
+                <li key={i} className="flex gap-3 px-3 py-3">
+                  <Skeleton className="size-9 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -233,26 +242,35 @@ export function DataTable<T>({
               <li
                 key={getRowId(row)}
                 className={cn(
-                  "space-y-2 p-4",
+                  renderMobileRow ? "flex items-start gap-2 px-3 py-3" : "space-y-2 p-4",
                   onRowClick && "cursor-pointer active:bg-muted/50",
                   rowClassName?.(row),
                 )}
                 onClick={rowClick(row)}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
-                  {rowActions?.(row)}
-                </div>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                  {columns
-                    .filter((c) => c !== primary && !c.hideOnMobile)
-                    .map((c) => (
-                      <div key={c.id} className="contents">
-                        <dt className="text-muted-foreground">{c.header}</dt>
-                        <dd className="min-w-0 break-words">{c.cell(row)}</dd>
-                      </div>
-                    ))}
-                </dl>
+                {renderMobileRow ? (
+                  <>
+                    <div className="min-w-0 flex-1">{renderMobileRow(row)}</div>
+                    {rowActions?.(row)}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
+                      {rowActions?.(row)}
+                    </div>
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                      {columns
+                        .filter((c) => c !== primary && !c.hideOnMobile)
+                        .map((c) => (
+                          <div key={c.id} className="contents">
+                            <dt className="text-muted-foreground">{c.header}</dt>
+                            <dd className="min-w-0 break-words">{c.cell(row)}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </>
+                )}
               </li>
             ))}
           </ul>

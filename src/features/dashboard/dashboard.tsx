@@ -104,28 +104,36 @@ function StatCard({
   detail,
   icon: Icon,
   tone = "series",
+  className,
 }: {
   label: string;
   value: React.ReactNode;
   detail?: React.ReactNode;
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   tone?: keyof typeof TONES;
+  className?: string;
 }) {
   const color = TONES[tone];
   return (
-    <Card className="gap-0 py-4">
-      <CardContent className="flex items-start gap-3 px-4">
+    <Card className={cn("gap-0 py-3 sm:py-4", className)}>
+      <CardContent className="flex items-start gap-2.5 px-3 sm:gap-3 sm:px-4">
         <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md sm:size-9 sm:rounded-lg"
           style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}
           aria-hidden
         >
-          <Icon className="size-4.5" style={{ color }} />
+          <Icon className="size-4 sm:size-4.5" style={{ color }} />
         </span>
         <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-semibold tracking-tight break-words tabular-nums">{value}</p>
-          {detail && <div className="mt-0.5 text-xs text-muted-foreground">{detail}</div>}
+          <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
+          <p className="text-lg leading-tight font-semibold tracking-tight break-words tabular-nums sm:text-2xl">
+            {value}
+          </p>
+          {detail && (
+            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:text-xs">
+              {detail}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -144,12 +152,12 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn("gap-4", className)}>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{subtitle}</CardDescription>
+    <Card className={cn("gap-3 py-4 sm:gap-4 sm:py-6", className)}>
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">{subtitle}</CardDescription>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="px-3 sm:px-6">{children}</CardContent>
     </Card>
   );
 }
@@ -168,13 +176,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className="space-y-4">
-      <div className="flex flex-col gap-3 border-b pb-3 lg:flex-row lg:items-end lg:justify-between">
+    <section aria-labelledby={id} className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-3 border-b pb-2 sm:pb-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 id={id} className="text-lg font-semibold tracking-tight">
+          <h2 id={id} className="text-base font-semibold tracking-tight sm:text-lg">
             {title}
           </h2>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">{description}</p>
         </div>
         {actions}
       </div>
@@ -216,8 +224,8 @@ function StatusBreakdown({ data }: { data: { status: PatientStatus; count: numbe
   if (total === 0) return <p className="text-sm text-muted-foreground">No patients.</p>;
 
   return (
-    <div className="space-y-5">
-      <div className="flex h-4 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full sm:h-4" aria-hidden>
         {STATUS_ORDER.map((s) => {
           const count = counts.get(s) ?? 0;
           return count > 0 ? (
@@ -232,8 +240,8 @@ function StatusBreakdown({ data }: { data: { status: PatientStatus; count: numbe
         {STATUS_ORDER.map((s) => {
           const count = counts.get(s) ?? 0;
           return (
-            <li key={s} className="space-y-1 rounded-lg border p-3">
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <li key={s} className="space-y-0.5 rounded-lg border p-2 sm:space-y-1 sm:p-3">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground sm:text-sm">
                 <span
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ background: STATUS_COLOR[s] }}
@@ -241,9 +249,12 @@ function StatusBreakdown({ data }: { data: { status: PatientStatus; count: numbe
                 />
                 {STATUS_LABEL[s]}
               </span>
-              <p className="text-xl font-semibold tabular-nums">{numberFormat.format(count)}</p>
-              <p className="text-xs text-muted-foreground">
-                {Math.round((count / total) * 100)}% of patients
+              <p className="text-lg font-semibold tabular-nums sm:text-xl">
+                {numberFormat.format(count)}
+              </p>
+              <p className="text-[11px] text-muted-foreground sm:text-xs">
+                {Math.round((count / total) * 100)}%
+                <span className="hidden sm:inline"> of patients</span>
               </p>
             </li>
           );
@@ -310,13 +321,13 @@ function DashboardBody({
     : 0;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-7 sm:space-y-10">
       <Section
         id="now"
         title="Right now"
         description="Live totals across all active doctors and patients."
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             label="Doctors"
             value={numberFormat.format(current.totalDoctors)}
@@ -344,7 +355,7 @@ function DashboardBody({
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-5 lg:items-start">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
           <ChartCard
             title="Patient status"
             subtitle="All active patients"
@@ -381,14 +392,14 @@ function DashboardBody({
           </ChartCard>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-          <ChartCard title="Caseload spread" subtitle="How many doctors have this many patients">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2 lg:items-start">
+          <ChartCard title="Caseload spread" subtitle="Doctors by number of active patients">
             <ColumnChart
               caption="Doctors by number of active patients"
               unit="doctors"
               data={current.patientsPerDoctor.map((b) => ({
                 key: b.label,
-                label: `${b.label} patients`,
+                label: b.label,
                 value: b.count,
               }))}
             />
@@ -413,7 +424,7 @@ function DashboardBody({
         description={`Patients admitted ${rangeText}. The date range only affects this section.`}
         actions={<RangeControls range={range} />}
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
           <StatCard
             label="Admissions"
             value={numberFormat.format(inRange.admissions)}
@@ -431,6 +442,7 @@ function DashboardBody({
             icon={TrendingUp}
           />
           <StatCard
+            className="col-span-2 sm:col-span-1"
             label="Most common condition"
             value={topCondition ? conditionName(topCondition.condition) : "None yet"}
             detail={
@@ -442,7 +454,7 @@ function DashboardBody({
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-5">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
           <ChartCard
             title="Admissions per month"
             subtitle="Dashed line is the monthly average"
@@ -483,15 +495,17 @@ export function Dashboard() {
 
   return (
     <>
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-5 flex items-end justify-between gap-3 sm:mb-8">
         <div className="space-y-1">
           <Greeting />
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Here&apos;s how the practice looks today.</p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Dashboard</h1>
+          <p className="hidden text-sm text-muted-foreground sm:block">
+            Here&apos;s how the practice looks today.
+          </p>
         </div>
-        {/* The button comes first in the row's growth direction (left on phones, right from sm
-            up), so the "Updated" text appearing after load never moves it. */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground sm:flex-row-reverse">
+        {/* Right-aligned row, reversed so the button sits at the fixed right edge: the "Updated"
+            text appearing after load grows to its left and never moves it. */}
+        <div className="flex flex-row-reverse items-center gap-2 text-xs text-muted-foreground sm:text-sm">
           <Button
             variant="outline"
             size="icon-sm"
@@ -503,7 +517,8 @@ export function Dashboard() {
           </Button>
           {stats.dataUpdatedAt > 0 && (
             <span aria-live="polite">
-              Updated {format(stats.dataUpdatedAt, "HH:mm")} · refreshes every minute
+              Updated {format(stats.dataUpdatedAt, "HH:mm")}
+              <span className="hidden sm:inline"> · refreshes every minute</span>
             </span>
           )}
         </div>

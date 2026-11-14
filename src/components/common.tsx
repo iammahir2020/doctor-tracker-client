@@ -29,12 +29,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 space-y-1">
-        <h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    <div className="mb-4 flex items-start justify-between gap-3 sm:mb-6 sm:items-end">
+      <div className="min-w-0 space-y-0.5 sm:space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight break-words sm:text-2xl">{title}</h1>
+        {description && <p className="text-xs text-muted-foreground sm:text-sm">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap justify-end gap-2">{actions}</div>}
     </div>
   );
 }
