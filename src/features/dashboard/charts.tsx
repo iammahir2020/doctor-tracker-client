@@ -4,7 +4,6 @@
 // charting library stays out of the first-load bundle. Everything renders client-only, which is
 // why reading the screen width with a media query is safe in here.
 import { format, parseISO } from "date-fns";
-import { useRouter } from "next/navigation";
 import {
   Area,
   AreaChart,
@@ -24,7 +23,7 @@ import {
   type TooltipContentProps,
 } from "recharts";
 import { useId } from "react";
-import { numberFormat, useMediaQuery } from "@/lib/utils";
+import { cn, numberFormat, useMediaQuery } from "@/lib/utils";
 
 const AXIS = { fontSize: 11, fill: "var(--muted-foreground)" } as const;
 const ACCENT = "var(--primary)";
@@ -121,16 +120,21 @@ export const GENDER_SERIES = [
   { key: "other", label: "Other", color: "var(--viz-other)" },
 ] as const;
 
+/** `fill`: on large screens, grow to the card's height (cards in a row share one height). */
+const FILL = "lg:h-auto lg:min-h-0 lg:flex-1";
+
 export function AdmissionsTrend({
   data,
+  fill = false,
 }: {
   data: { month: string; count: number; male: number; female: number; other: number }[];
+  fill?: boolean;
 }) {
   const wide = useWide();
   const gid = useGradientId("admissions");
   return (
     <>
-      <div className="h-56 sm:h-72" aria-hidden>
+      <div className={cn("h-56 sm:h-72", fill && FILL)} aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 8, left: wide ? -8 : -20, bottom: 0 }}>
             <defs>
@@ -195,7 +199,11 @@ export function ConditionRadar({ data }: { data: BarDatum[] }) {
     <>
       <div className="h-56 sm:h-64" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} outerRadius={wide ? "72%" : "68%"} margin={{ top: 4, bottom: 4 }}>
+          <RadarChart
+            data={data}
+            outerRadius="66%"
+            margin={{ top: 8, right: 24, bottom: 8, left: 24 }}
+          >
             <PolarGrid stroke="var(--viz-grid)" />
             <PolarAngleAxis
               dataKey="label"
@@ -220,107 +228,23 @@ export function ConditionRadar({ data }: { data: BarDatum[] }) {
   );
 }
 
-/**
- * Horizontal bars on a faint full-width track, longest first, with values at the end. The first
- * bar is the leader and gets the full accent; optional `href` makes each bar a link.
- */
-export function RankedBars({
-  data,
-  unit,
-  caption,
-  href,
-}: {
-  data: BarDatum[];
-  unit: string;
-  caption: string;
-  href?: (key: string) => string;
-}) {
-  const router = useRouter();
-  const wide = useWide();
-  const rowHeight = wide ? 34 : 28;
-  const height = Math.max(120, data.length * rowHeight + 8);
-  const maxChars = wide ? 22 : 12;
-  const gid = useGradientId("ranked");
-
-  return (
-    <>
-      <div style={{ height }} aria-hidden>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 0, right: 36, left: 0, bottom: 0 }}
-            barCategoryGap={wide ? 8 : 6}
-          >
-            <defs>
-              <linearGradient id={gid} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor={ACCENT} stopOpacity={0.45} />
-                <stop offset="100%" stopColor={ACCENT} stopOpacity={0.85} />
-              </linearGradient>
-            </defs>
-            <XAxis type="number" hide />
-            <YAxis
-              type="category"
-              dataKey="label"
-              tick={{ ...AXIS, fill: "var(--foreground)" }}
-              tickLine={false}
-              axisLine={false}
-              width={wide ? 165 : 104}
-              interval={0}
-              tickFormatter={(value: string) => {
-                // On phones the "Dr." prefix costs space every row; the tooltip keeps the full name.
-                const v = wide ? value : value.replace(/^Dr\.\s+/, "");
-                return v.length > maxChars ? `${v.slice(0, maxChars - 1)}…` : v;
-              }}
-            />
-            <Tooltip cursor={false} content={(props) => <ChartTooltip {...props} unit={unit} />} />
-            <Bar
-              dataKey="value"
-              radius={999}
-              maxBarSize={wide ? 18 : 14}
-              background={{ fill: "var(--muted)", radius: 999 }}
-              isAnimationActive={false}
-              cursor={href ? "pointer" : undefined}
-              onClick={
-                href
-                  ? (entry: { payload?: BarDatum }) => {
-                      if (entry.payload) router.push(href(entry.payload.key));
-                    }
-                  : undefined
-              }
-            >
-              {data.map((d, i) => (
-                <Cell key={d.key} fill={i === 0 ? ACCENT : `url(#${gid})`} />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                style={{ fontSize: 12, fontWeight: 600, fill: "var(--foreground)" }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <DataTableFallback caption={caption} rows={data} />
-    </>
-  );
-}
-
 /** Vertical bars with a soft gradient; the tallest column is highlighted. */
 export function ColumnChart({
   data,
   unit,
   caption,
+  fill = false,
 }: {
   data: BarDatum[];
   unit: string;
   caption: string;
+  fill?: boolean;
 }) {
   const max = Math.max(...data.map((d) => d.value));
   const gid = useGradientId("column");
   return (
     <>
-      <div className="h-44 sm:h-56" aria-hidden>
+      <div className={cn("h-44 sm:h-56", fill && FILL)} aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

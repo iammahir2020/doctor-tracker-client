@@ -39,10 +39,6 @@ const ConditionRadar = dynamic(() => import("./charts").then((m) => m.ConditionR
   ssr: false,
   loading: chartFallback,
 });
-const RankedBars = dynamic(() => import("./charts").then((m) => m.RankedBars), {
-  ssr: false,
-  loading: chartFallback,
-});
 const ColumnChart = dynamic(() => import("./charts").then((m) => m.ColumnChart), {
   ssr: false,
   loading: chartFallback,
@@ -184,8 +180,8 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn("gap-3 py-4 sm:gap-4 sm:py-6", className)}>
-      <CardHeader className="px-4 sm:px-6">
+    <Card className={cn("gap-3 py-4 sm:gap-4 sm:py-5", className)}>
+      <CardHeader className="px-4 sm:px-5">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div>
             <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
@@ -194,7 +190,8 @@ function ChartCard({
           {headerExtra}
         </div>
       </CardHeader>
-      <CardContent className="px-3 sm:px-6">{children}</CardContent>
+      {/* flex-1 + flex-col: in a row of equal-height cards, charts can grow to fill the card. */}
+      <CardContent className="flex flex-1 flex-col px-3 sm:px-5">{children}</CardContent>
     </Card>
   );
 }
@@ -394,6 +391,64 @@ function ConditionList({
   );
 }
 
+/**
+ * Ranked rows: name and value on one line, a bar under it on the full card width. Unlike an
+ * axis-labelled chart, names never fight the bars for width (which mattered most on phones), and
+ * each row can be a real link.
+ */
+function RankedList({
+  rows,
+  href,
+}: {
+  rows: { key: string; label: string; value: number; hint?: string }[];
+  href?: (key: string) => string;
+}) {
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  return (
+    // On large screens the card may be stretched to match its neighbour; spread rows over it.
+    <ol className="flex flex-1 flex-col gap-2.5 sm:gap-3 lg:justify-between">
+      {rows.map((r, i) => {
+        const body = (
+          <>
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="min-w-0 break-words">
+                <span className="font-medium">{r.label}</span>
+                {r.hint && <span className="ml-1.5 text-xs text-muted-foreground">{r.hint}</span>}
+              </span>
+              <span className="shrink-0 font-semibold tabular-nums">
+                {numberFormat.format(r.value)}
+              </span>
+            </div>
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+              <div
+                className={cn(
+                  "h-full rounded-full",
+                  i === 0 ? "bg-primary" : "bg-gradient-to-r from-primary/35 to-primary/75",
+                )}
+                style={{ width: `${(r.value / max) * 100}%` }}
+              />
+            </div>
+          </>
+        );
+        return (
+          <li key={r.key}>
+            {href ? (
+              <Link
+                href={href(r.key)}
+                className="-mx-1.5 block rounded-md px-1.5 py-0.5 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                {body}
+              </Link>
+            ) : (
+              body
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** The latest admissions, each opening the patient panel. */
 function RecentAdmissions() {
   const { data, isPending } = usePatients({
@@ -517,14 +572,10 @@ function DashboardBody({
           />
         </div>
 
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
-          <ChartCard
-            title="Patient status"
-            subtitle="All active patients"
-            className="lg:col-span-2"
-          >
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+          <ChartCard title="Patient status" subtitle="All active patients">
             <StatusBreakdown data={current.patientsByStatus} />
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-auto flex flex-wrap gap-2 pt-5">
               <Button variant="outline" size="sm" asChild>
                 <Link href="/patients?status=critical">
                   View critical patients <ArrowRight aria-hidden />
@@ -535,28 +586,9 @@ function DashboardBody({
               </Button>
             </div>
           </ChartCard>
-          <ChartCard
-            title="Busiest doctors"
-            subtitle="Top 10 by active patients · click a bar to open"
-            className="lg:col-span-3"
-          >
-            <RankedBars
-              caption="Top 10 doctors by active patients"
-              unit="patients"
-              href={(id) => `/doctors/${id}`}
-              data={current.topDoctors.map((d) => ({
-                key: d._id,
-                label: d.name,
-                value: d.patientCount,
-                hint: specializationName(d.specialization),
-              }))}
-            />
-          </ChartCard>
-        </div>
-
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2 lg:items-start">
           <ChartCard title="Caseload spread" subtitle="Doctors by number of active patients">
             <ColumnChart
+              fill
               caption="Doctors by number of active patients"
               unit="doctors"
               data={current.patientsPerDoctor.map((b) => ({
@@ -566,14 +598,27 @@ function DashboardBody({
               }))}
             />
           </ChartCard>
+        </div>
+
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+          <ChartCard title="Busiest doctors" subtitle="Top 10 by active patients · click to open">
+            <RankedList
+              href={(id) => `/doctors/${id}`}
+              rows={current.topDoctors.map((d) => ({
+                key: d._id,
+                label: d.name,
+                value: d.patientCount,
+                hint: specializationName(d.specialization),
+              }))}
+            />
+          </ChartCard>
           <ChartCard title="Doctors by specialization" subtitle="Active doctors">
-            <RankedBars
-              caption="Doctors by specialization"
-              unit="doctors"
-              data={current.doctorsBySpecialization.map((s) => ({
-                key: s.specialization,
-                label: specializationName(s.specialization),
-                value: s.count,
+            <RankedList
+              href={(id) => `/doctors?specialization=${id}`}
+              rows={current.doctorsBySpecialization.map((sp) => ({
+                key: sp.specialization,
+                label: specializationName(sp.specialization),
+                value: sp.count,
               }))}
             />
           </ChartCard>
@@ -629,14 +674,14 @@ function DashboardBody({
           />
         </div>
 
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
           <ChartCard
             title="Admissions per month"
             subtitle="Split by gender"
             className="lg:col-span-3"
             headerExtra={<GenderLegend totals={inRange.byGender} />}
           >
-            <AdmissionsTrend data={inRange.admissionsByMonth} />
+            <AdmissionsTrend fill data={inRange.admissionsByMonth} />
           </ChartCard>
           <ChartCard
             title="Recent admissions"
@@ -652,7 +697,7 @@ function DashboardBody({
           </ChartCard>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5 lg:items-start">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
           <ChartCard
             title="Conditions"
             subtitle="Share of admissions in this range · click one to see its patients"
@@ -673,6 +718,7 @@ function DashboardBody({
             className="lg:col-span-2"
           >
             <ColumnChart
+              fill
               caption="Admissions by age group"
               unit="patients"
               data={inRange.byAge.map((a) => ({ key: a.label, label: a.label, value: a.count }))}
