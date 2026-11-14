@@ -7,10 +7,9 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { ConfirmDialog, EmptyState, Field, PageHeader } from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
-import { FilterBar, SearchInput, SelectFilter } from "@/components/filters";
+import { FilterBar, SearchInput, SelectFilter, ShowArchivedToggle } from "@/components/filters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -34,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCurrentUser } from "@/features/auth/api";
+import { useCurrentUser, useRole } from "@/features/auth/api";
 import { ApiError, fieldErrors, type ManagedUser, type Role } from "@/lib/api";
 import { cn, compact, formatDate, plural, useUrlState } from "@/lib/utils";
 import {
@@ -292,10 +290,10 @@ function UserRowActions({ user, onEdit }: { user: ManagedUser; onEdit: (u: Manag
 // ---------- page ----------
 
 export function UsersView() {
-  const me = useCurrentUser();
+  const role = useRole();
   // Wait for the role, so staff never fire a request the server will refuse.
-  if (!me) return <PageHeader title="Users" />;
-  if (me.role !== "admin") {
+  if (!role) return <PageHeader title="Users" />;
+  if (role !== "admin") {
     return (
       <>
         <PageHeader title="Users" />
@@ -367,16 +365,10 @@ function UsersList() {
           value={params.role}
           onChange={(r) => url.set({ role: r })}
         />
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <Checkbox
-            id="show-archived-users"
-            checked={params.archived}
-            onCheckedChange={(v) => url.set({ archived: v === true })}
-          />
-          <Label htmlFor="show-archived-users" className="font-normal">
-            Show archived
-          </Label>
-        </div>
+        <ShowArchivedToggle
+          checked={Boolean(params.archived)}
+          onChange={(v) => url.set({ archived: v })}
+        />
       </FilterBar>
 
       <DataTable

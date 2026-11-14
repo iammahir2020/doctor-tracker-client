@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { createContext, createElement, useContext, useSyncExternalStore } from "react";
 import { toast } from "sonner";
-import { api, type User } from "@/lib/api";
+import { api, type Role, type User } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
 export function useMe() {
@@ -30,6 +30,30 @@ export function useCurrentUser() {
     () => false,
   );
   return hydrated ? data : undefined;
+}
+
+const RoleHint = createContext<Role | undefined>(undefined);
+
+/** Provides the role read from the session cookie on the server (see lib/session.ts). */
+export function RoleHintProvider({
+  role,
+  children,
+}: {
+  role: Role | undefined;
+  children: React.ReactNode;
+}) {
+  return createElement(RoleHint.Provider, { value: role }, children);
+}
+
+/**
+ * The signed-in user's role for showing or hiding UI. Known from the first render via the
+ * server's hint, so admin-only controls don't pop in and push the page around; the fetched user
+ * takes over once it loads.
+ */
+export function useRole(): Role | undefined {
+  const me = useCurrentUser();
+  const hint = useContext(RoleHint);
+  return me?.role ?? hint;
 }
 
 export function useLogin() {

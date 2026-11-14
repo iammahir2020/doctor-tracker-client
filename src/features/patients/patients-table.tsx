@@ -22,6 +22,7 @@ import {
 import { DataTable, type Column } from "@/components/data-table";
 import {
   ActiveFilters,
+  ShowArchivedToggle,
   DateRangePicker,
   FilterBar,
   MultiSelectFilter,
@@ -40,7 +41,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -408,16 +408,10 @@ export function PatientsTable({
           onChange={(r) => url.set({ minAge: r.min, maxAge: r.max })}
         />
         {isAdmin && (
-          <div className="flex items-center gap-2 sm:ml-auto">
-            <Checkbox
-              id="show-archived-patients"
-              checked={params.archived}
-              onCheckedChange={(v) => url.set({ archived: v === true })}
-            />
-            <Label htmlFor="show-archived-patients" className="font-normal">
-              Show archived
-            </Label>
-          </div>
+          <ShowArchivedToggle
+            checked={Boolean(params.archived)}
+            onChange={(v) => url.set({ archived: v })}
+          />
         )}
       </FilterBar>
 

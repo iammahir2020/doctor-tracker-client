@@ -258,14 +258,14 @@ function StatusBreakdown({ data }: { data: { status: PatientStatus; count: numbe
 /** Name and local time of day are only known in the browser, after hydration. */
 function Greeting() {
   const me = useCurrentUser();
-  if (!me) return <>Dashboard</>;
-  const hour = new Date().getHours();
-  const text = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  return (
-    <>
-      {text}, {me.name.split(" ")[0]}
-    </>
-  );
+  // Fixed one-line height: the text is filled in after load, so it must not change the layout.
+  let text = "";
+  if (me) {
+    const hour = new Date().getHours();
+    const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    text = `${part}, ${me.name.split(" ")[0]}`;
+  }
+  return <p className="h-5 truncate text-sm font-medium text-primary">{text}</p>;
 }
 
 function DashboardSkeleton() {
@@ -485,17 +485,13 @@ export function Dashboard() {
     <>
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            <Greeting />
-          </h1>
+          <Greeting />
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Here&apos;s how the practice looks today.</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {stats.dataUpdatedAt > 0 && (
-            <span aria-live="polite">
-              Updated {format(stats.dataUpdatedAt, "HH:mm")} · refreshes every minute
-            </span>
-          )}
+        {/* The button comes first in the row's growth direction (left on phones, right from sm
+            up), so the "Updated" text appearing after load never moves it. */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground sm:flex-row-reverse">
           <Button
             variant="outline"
             size="icon-sm"
@@ -505,6 +501,11 @@ export function Dashboard() {
           >
             <RefreshCw className={cn(stats.isFetching && "animate-spin")} aria-hidden />
           </Button>
+          {stats.dataUpdatedAt > 0 && (
+            <span aria-live="polite">
+              Updated {format(stats.dataUpdatedAt, "HH:mm")} · refreshes every minute
+            </span>
+          )}
         </div>
       </div>
 

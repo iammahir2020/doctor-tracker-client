@@ -32,7 +32,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCurrentUser, useLogout } from "@/features/auth/api";
+import { useCurrentUser, useLogout, useRole } from "@/features/auth/api";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; adminOnly?: boolean };
@@ -57,8 +57,8 @@ function NavLinks({
   onNavigate?: (href: string) => void;
 }) {
   const pathname = usePathname();
-  const me = useCurrentUser();
-  const items = NAV.filter((item) => !item.adminOnly || me?.role === "admin");
+  const role = useRole();
+  const items = NAV.filter((item) => !item.adminOnly || role === "admin");
 
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">

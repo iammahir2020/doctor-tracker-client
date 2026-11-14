@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useChangePassword, useCurrentUser } from "@/features/auth/api";
+import { useChangePassword, useCurrentUser, useRole } from "@/features/auth/api";
 import { useLookupMutation, useLookups } from "@/features/lookups/api";
 import { ApiError, fieldErrors, type Lookup, type LookupType } from "@/lib/api";
 import { cn, useUrlState } from "@/lib/utils";
@@ -367,8 +367,7 @@ function LookupsTab() {
 
 export function SettingsView() {
   const url = useUrlState();
-  const me = useCurrentUser();
-  const isAdmin = me?.role === "admin";
+  const isAdmin = useRole() === "admin";
   const tab = isAdmin && url.get("tab") === "lookups" ? "lookups" : "account";
 
   return (

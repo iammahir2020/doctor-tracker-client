@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCurrentUser } from "@/features/auth/api";
+import { useRole } from "@/features/auth/api";
 import { ApiError, type Role } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -41,13 +41,11 @@ export function PageHeader({
 
 /** Hides UI the role can't use. The server enforces the same rule, this is only for UX. */
 export function RoleGate({ role, children }: { role: Role; children: React.ReactNode }) {
-  const me = useCurrentUser();
-  return me?.role === role ? <>{children}</> : null;
+  return useRole() === role ? <>{children}</> : null;
 }
 
 export function useIsAdmin() {
-  const me = useCurrentUser();
-  return me?.role === "admin";
+  return useRole() === "admin";
 }
 
 export function EmptyState({

@@ -2,10 +2,12 @@
 
 import { endOfDay, startOfDay, subDays, subMonths, startOfYear } from "date-fns";
 import { CalendarIcon, Check, ChevronsUpDown, Search, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Command,
@@ -25,13 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn, formatDate, toDateParam, useDebounce, useMediaQuery } from "@/lib/utils";
+import { cn, formatDate, toDateParam, useDebounce } from "@/lib/utils";
 
 export type Option = { value: string; label: string };
 
 /**
- * Search is always visible. The other filters sit inline on wider screens and in a bottom sheet
- * on phones, where five rows of controls would push the results off screen.
+ * Search is always visible. The other filters sit inline from 640px up and in a bottom sheet on
+ * phones, where five rows of controls would push the results off screen. The layout is chosen by
+ * CSS, so the server's HTML already matches the screen and nothing jumps on load.
  */
 export function FilterBar({
   search,
@@ -47,30 +50,22 @@ export function FilterBar({
   /** Filters other than search that are set, shown on the mobile button. */
   activeCount: number;
 }) {
-  // Server renders the desktop layout; phones switch after hydration.
-  const isDesktop = useMediaQuery("(min-width: 640px)", true);
   const clear = canClear && (
     <Button variant="ghost" size="sm" onClick={onClear}>
       <X aria-hidden /> Clear filters
     </Button>
   );
 
-  if (isDesktop) {
-    return (
-      <div className="mb-4 flex flex-wrap items-center gap-2" role="search">
-        {search}
-        {children}
-        {clear}
-      </div>
-    );
-  }
-
   return (
-    <div className="mb-4 flex items-center gap-2" role="search">
-      <div className="min-w-0 flex-1">{search}</div>
+    <div className="mb-4 flex flex-wrap items-center gap-2" role="search">
+      <div className="min-w-0 flex-1 sm:flex-none">{search}</div>
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" aria-label={`Filters, ${activeCount} active`}>
+          <Button
+            variant="outline"
+            className="sm:hidden"
+            aria-label={`Filters, ${activeCount} active`}
+          >
             <SlidersHorizontal aria-hidden />
             Filters
             {activeCount > 0 && (
@@ -80,6 +75,7 @@ export function FilterBar({
             )}
           </Button>
         </SheetTrigger>
+        {/* Only mounted while open, so the filters exist once in the DOM otherwise. */}
         <SheetContent side="bottom" className="max-h-[85svh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Filters</SheetTitle>
@@ -90,6 +86,29 @@ export function FilterBar({
           </div>
         </SheetContent>
       </Sheet>
+      <div className="hidden sm:contents">
+        {children}
+        {clear}
+      </div>
+    </div>
+  );
+}
+
+/** The admin "Show archived" switch; ids are unique so it works in both filter layouts. */
+export function ShowArchivedToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex items-center gap-2 sm:ml-auto">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      <Label htmlFor={id} className="font-normal">
+        Show archived
+      </Label>
     </div>
   );
 }

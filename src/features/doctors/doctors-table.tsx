@@ -8,6 +8,7 @@ import { EmptyState, InitialsAvatar, PageHeader, RoleGate, useIsAdmin } from "@/
 import { DataTable, type Column } from "@/components/data-table";
 import {
   ActiveFilters,
+  ShowArchivedToggle,
   DateRangePicker,
   FilterBar,
   MultiSelectFilter,
@@ -16,14 +17,12 @@ import {
 } from "@/components/filters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import { useLookups } from "@/features/lookups/api";
 import type { Doctor } from "@/lib/api";
 import { compact, formatDate, numberFormat, plural, useUrlState } from "@/lib/utils";
@@ -228,16 +227,10 @@ export function DoctorsView() {
           onChange={(r) => url.set({ minPatients: r.min, maxPatients: r.max })}
         />
         {isAdmin && (
-          <div className="flex items-center gap-2 sm:ml-auto">
-            <Checkbox
-              id="show-archived"
-              checked={params.archived}
-              onCheckedChange={(v) => url.set({ archived: v === true })}
-            />
-            <Label htmlFor="show-archived" className="font-normal">
-              Show archived
-            </Label>
-          </div>
+          <ShowArchivedToggle
+            checked={Boolean(params.archived)}
+            onChange={(v) => url.set({ archived: v })}
+          />
         )}
       </FilterBar>
 

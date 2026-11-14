@@ -21,7 +21,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useCurrentUser } from "@/features/auth/api";
+import { useRole } from "@/features/auth/api";
 import { useDoctorOptions } from "@/features/doctors/api";
 import { usePatients } from "@/features/patients/api";
 import { useDebounce } from "@/lib/utils";
@@ -80,7 +80,7 @@ function SearchResults({ query, go }: { query: string; go: (href: string) => voi
 /** Ctrl/Cmd+K jumps to any page, doctor or patient. */
 export function CommandPalette() {
   const router = useRouter();
-  const me = useCurrentUser();
+  const role = useRole();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const query = useDebounce(text.trim(), 250);
@@ -133,7 +133,7 @@ export function CommandPalette() {
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {PAGES.filter((p) => !p.adminOnly || me?.role === "admin").map(
+            {PAGES.filter((p) => !p.adminOnly || role === "admin").map(
               ({ href, label, icon: Icon }) => (
                 <CommandItem key={href} value={`page ${label}`} onSelect={() => go(href)}>
                   <Icon aria-hidden />

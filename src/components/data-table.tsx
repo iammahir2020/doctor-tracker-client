@@ -150,7 +150,48 @@ export function DataTable<T>({
         aria-busy={isFetching}
       >
         {/* Desktop / tablet: table */}
-        {isDesktop ? (
+        {/* Before data arrives the layout is picked by CSS (it's in the server HTML, so no jump);
+            once rows exist, only the layout in use is rendered. */}
+        {showSkeleton && (
+          <>
+            <div className="hidden md:block" aria-hidden>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((c) => (
+                      <TableHead key={c.id} className={c.className}>
+                        {c.header}
+                      </TableHead>
+                    ))}
+                    {rowActions && <TableHead className="w-12" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <TableRow key={i}>
+                      {columns.map((c) => (
+                        <TableCell key={c.id} className={c.className}>
+                          <Skeleton className="h-4 w-full max-w-40" />
+                        </TableCell>
+                      ))}
+                      {rowActions && <TableCell />}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <ul className="divide-y md:hidden" aria-hidden>
+              {Array.from({ length: 5 }, (_, i) => (
+                <li key={i} className="space-y-2 p-4">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-56" />
+                  <Skeleton className="h-4 w-32" />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {showSkeleton ? null : isDesktop ? (
           <div>
             <Table>
               <caption className="sr-only">{caption}</caption>
@@ -169,74 +210,51 @@ export function DataTable<T>({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {showSkeleton &&
-                  Array.from({ length: 8 }, (_, i) => (
-                    <TableRow key={i}>
-                      {columns.map((c) => (
-                        <TableCell key={c.id}>
-                          <Skeleton className="h-4 w-full max-w-40" />
-                        </TableCell>
-                      ))}
-                      {rowActions && <TableCell />}
-                    </TableRow>
-                  ))}
-                {!showSkeleton &&
-                  rows.map((row) => (
-                    <TableRow
-                      key={getRowId(row)}
-                      className={cn(onRowClick && "cursor-pointer", rowClassName?.(row))}
-                      onClick={rowClick(row)}
-                    >
-                      {columns.map((c) => (
-                        <TableCell key={c.id} className={c.className}>
-                          {c.cell(row)}
-                        </TableCell>
-                      ))}
-                      {rowActions && (
-                        <TableCell className="text-right">{rowActions(row)}</TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+                {rows.map((row) => (
+                  <TableRow
+                    key={getRowId(row)}
+                    className={cn(onRowClick && "cursor-pointer", rowClassName?.(row))}
+                    onClick={rowClick(row)}
+                  >
+                    {columns.map((c) => (
+                      <TableCell key={c.id} className={c.className}>
+                        {c.cell(row)}
+                      </TableCell>
+                    ))}
+                    {rowActions && <TableCell className="text-right">{rowActions(row)}</TableCell>}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
         ) : (
           <ul className="divide-y" aria-label={caption}>
-            {showSkeleton &&
-              Array.from({ length: 5 }, (_, i) => (
-                <li key={i} className="space-y-2 p-4">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-56" />
-                  <Skeleton className="h-4 w-32" />
-                </li>
-              ))}
-            {!showSkeleton &&
-              rows.map((row) => (
-                <li
-                  key={getRowId(row)}
-                  className={cn(
-                    "space-y-2 p-4",
-                    onRowClick && "cursor-pointer active:bg-muted/50",
-                    rowClassName?.(row),
-                  )}
-                  onClick={rowClick(row)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
-                    {rowActions?.(row)}
-                  </div>
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                    {columns
-                      .filter((c) => c !== primary && !c.hideOnMobile)
-                      .map((c) => (
-                        <div key={c.id} className="contents">
-                          <dt className="text-muted-foreground">{c.header}</dt>
-                          <dd className="min-w-0 break-words">{c.cell(row)}</dd>
-                        </div>
-                      ))}
-                  </dl>
-                </li>
-              ))}
+            {rows.map((row) => (
+              <li
+                key={getRowId(row)}
+                className={cn(
+                  "space-y-2 p-4",
+                  onRowClick && "cursor-pointer active:bg-muted/50",
+                  rowClassName?.(row),
+                )}
+                onClick={rowClick(row)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 font-medium">{primary?.cell(row)}</div>
+                  {rowActions?.(row)}
+                </div>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                  {columns
+                    .filter((c) => c !== primary && !c.hideOnMobile)
+                    .map((c) => (
+                      <div key={c.id} className="contents">
+                        <dt className="text-muted-foreground">{c.header}</dt>
+                        <dd className="min-w-0 break-words">{c.cell(row)}</dd>
+                      </div>
+                    ))}
+                </dl>
+              </li>
+            ))}
           </ul>
         )}
 

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -59,12 +60,75 @@ export function LoginForm() {
   const notice = error?.code === "ACCOUNT_ARCHIVED" ? error.message : archivedNotice;
 
   return (
-    <Card>
-      <CardContent className="space-y-4">
-        {server !== "hidden" && server !== "checking" && (
+    <>
+      <Card>
+        <CardContent className="space-y-4">
+          <form onSubmit={onSubmit} noValidate className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                spellCheck={false}
+                autoComplete="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
+                {...register("email")}
+              />
+              {errors.email && (
+                <p id="email-error" className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
+                {...register("password")}
+              />
+              {errors.password && (
+                <p id="password-error" className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {notice ? (
+              <p role="alert" className={NOTICE_CLASS}>
+                {notice}
+              </p>
+            ) : (
+              error && (
+                <p
+                  role="alert"
+                  className={error.status === 429 ? NOTICE_CLASS : "text-sm text-destructive"}
+                >
+                  {error.status === 401 ? "Invalid email or password." : error.message}
+                </p>
+              )
+            )}
+
+            <Button type="submit" className="w-full" disabled={login.isPending}>
+              {login.isPending && <Loader2 className="animate-spin" aria-hidden />}
+              {login.isPending ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      {/* Rendered into <body> and fixed to the bottom of the screen: it appears after a few
+          seconds, and as a sibling of the form it would add spacing and re-centre the page. */}
+      {server !== "hidden" &&
+        server !== "checking" &&
+        createPortal(
           <div
             role="status"
-            className="flex items-start gap-2 rounded-md border bg-muted px-3 py-2 text-sm transition-opacity"
+            className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-sm items-start gap-2 rounded-md border bg-background px-3 py-2 text-sm shadow-lg"
           >
             {server === "waking" ? (
               <>
@@ -77,67 +141,10 @@ export function LoginForm() {
                 <span>Server ready.</span>
               </>
             )}
-          </div>
+          </div>,
+          document.body,
         )}
-
-        <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              spellCheck={false}
-              autoComplete="email"
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? "email-error" : undefined}
-              {...register("email")}
-            />
-            {errors.email && (
-              <p id="email-error" className="text-sm text-destructive">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              {...register("password")}
-            />
-            {errors.password && (
-              <p id="password-error" className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {notice ? (
-            <p role="alert" className={NOTICE_CLASS}>
-              {notice}
-            </p>
-          ) : (
-            error && (
-              <p
-                role="alert"
-                className={error.status === 429 ? NOTICE_CLASS : "text-sm text-destructive"}
-              >
-                {error.status === 401 ? "Invalid email or password." : error.message}
-              </p>
-            )
-          )}
-
-          <Button type="submit" className="w-full" disabled={login.isPending}>
-            {login.isPending && <Loader2 className="animate-spin" aria-hidden />}
-            {login.isPending ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    </>
   );
 }
 
