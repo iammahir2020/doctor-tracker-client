@@ -28,7 +28,7 @@ import { cn, numberFormat, useMediaQuery } from "@/lib/utils";
 const AXIS = { fontSize: 11, fill: "var(--muted-foreground)" } as const;
 const ACCENT = "var(--primary)";
 
-export type BarDatum = { key: string; label: string; value: number; hint?: string };
+type BarDatum = { key: string; label: string; value: number; hint?: string };
 
 function useWide() {
   return useMediaQuery("(min-width: 640px)", true);

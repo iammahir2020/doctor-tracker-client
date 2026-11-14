@@ -15,7 +15,7 @@ export type UserListParams = {
   archived?: boolean;
 };
 
-export type NewUser = { name: string; email: string; password: string; role: Role };
+type NewUser = { name: string; email: string; password: string; role: Role };
 
 export function useUsers(params: UserListParams) {
   return useQuery({

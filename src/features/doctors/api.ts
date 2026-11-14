@@ -26,7 +26,7 @@ export type DoctorListParams = {
   archived?: boolean;
 };
 
-export type DoctorInput = Pick<Doctor, "name" | "specialization" | "hospital" | "phone" | "email">;
+type DoctorInput = Pick<Doctor, "name" | "specialization" | "hospital" | "phone" | "email">;
 
 export function useDoctors(params: DoctorListParams) {
   return useQuery({

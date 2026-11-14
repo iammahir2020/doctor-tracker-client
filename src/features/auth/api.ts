@@ -6,7 +6,7 @@ import { createContext, createElement, useContext, useSyncExternalStore } from "
 import { api, type Role, type User } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
-export function useMe() {
+function useMe() {
   return useQuery({
     queryKey: qk.me,
     queryFn: ({ signal }) => api<{ user: User }>("/auth/me", { signal }).then((r) => r.user),

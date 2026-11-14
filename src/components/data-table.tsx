@@ -35,7 +35,7 @@ export type Column<T> = {
   hideOnMobile?: boolean;
 };
 
-export type SortState = { sort: string; order: "asc" | "desc" };
+type SortState = { sort: string; order: "asc" | "desc" };
 
 type DataTableProps<T> = {
   columns: Column<T>[];
@@ -66,7 +66,7 @@ type DataTableProps<T> = {
   caption: string;
 };
 
-export const PAGE_SIZES = [10, 20, 50] as const;
+const PAGE_SIZES = [10, 20, 50] as const;
 
 function SortHeader<T>({
   column,

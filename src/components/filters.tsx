@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatDate, toDateParam, useDebounce } from "@/lib/utils";
 
-export type Option = { value: string; label: string };
+type Option = { value: string; label: string };
 
 /**
  * Search is always visible. The other filters sit inline from 640px up and in a bottom sheet on
@@ -268,9 +268,9 @@ export function SelectFilter({
   );
 }
 
-export type DateRangeValue = { from?: string; to?: string };
+type DateRangeValue = { from?: string; to?: string };
 
-export const DATE_PRESETS: { label: string; range: () => { from: Date; to: Date } }[] = [
+const DATE_PRESETS: { label: string; range: () => { from: Date; to: Date } }[] = [
   { label: "Last 7 days", range: () => ({ from: subDays(new Date(), 6), to: new Date() }) },
   { label: "Last 30 days", range: () => ({ from: subDays(new Date(), 29), to: new Date() }) },
   { label: "Last 3 months", range: () => ({ from: subMonths(new Date(), 3), to: new Date() }) },
@@ -425,7 +425,7 @@ export function RangeInput({
   );
 }
 
-export type FilterChip = { key: string; label: string; onRemove: () => void };
+type FilterChip = { key: string; label: string; onRemove: () => void };
 
 /** The filters currently narrowing the list, each removable on its own. */
 export function ActiveFilters({

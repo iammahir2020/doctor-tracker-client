@@ -28,7 +28,7 @@ export type PatientListParams = {
   archived?: boolean;
 };
 
-export type PatientInput = Pick<
+type PatientInput = Pick<
   Patient,
   "name" | "gender" | "phone" | "condition" | "status" | "doctorId"
 > & {
