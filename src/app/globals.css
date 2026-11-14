@@ -67,6 +67,13 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  /* Charts: one hue for single-series charts, reserved status colours, checked for colour-blind
+     separation in the order recovered → active → critical. */
+  --viz-series: #2a78d6;
+  --viz-series-muted: #9ec5f4;
+  --viz-good: #0ca30c;
+  --viz-critical: #d03b3b;
+  --viz-grid: #e5e4e0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -101,6 +108,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+  --viz-series: #3987e5;
+  --viz-series-muted: #1c5cab;
+  --viz-good: #0ca30c;
+  --viz-critical: #d03b3b;
+  --viz-grid: #383835;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
