@@ -95,8 +95,8 @@ flowchart LR
 - **Trade-off:** URL parsing in each list page; worth it for shareable, reload-safe views.
 
 Other choices, briefly: **archive instead of delete** (the app moves a doctor's patients before
-archiving them); a **denormalised `patientCount`** kept in sync by transactions; **indexed prefix
-search** on lower-cased fields, with every list index starting with `isArchived` (details and
+archiving them); a **denormalised `patientCount`** kept in sync by transactions; **case-insensitive
+"contains" search** on lower-cased fields, with every list index starting with `isArchived` (details and
 `explain()` results in the server README).
 
 ## Scalability
