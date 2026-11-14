@@ -86,8 +86,19 @@ export function useSaveDoctor() {
 export function useSetDoctorArchived() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, archive }: { id: string; archive: boolean }) =>
-      api<Doctor>(`/doctors/${id}/${archive ? "archive" : "restore"}`, { method: "POST" }),
+    mutationFn: ({
+      id,
+      archive,
+      reassignTo,
+    }: {
+      id: string;
+      archive: boolean;
+      reassignTo?: string;
+    }) =>
+      api<Doctor & { reassigned?: number }>(`/doctors/${id}/${archive ? "archive" : "restore"}`, {
+        method: "POST",
+        body: reassignTo ? { reassignTo } : undefined,
+      }),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ["doctors", "list"] });
       const snapshot = queryClient.getQueriesData<Paged<Doctor>>({ queryKey: ["doctors", "list"] });
@@ -107,8 +118,15 @@ export function useSetDoctorArchived() {
     },
     onSuccess: (doctor, { archive }) => {
       queryClient.setQueryData(qk.doctors.detail(doctor._id), doctor);
-      toast.success(archive ? `${doctor.name} archived` : `${doctor.name} restored`);
+      const moved = doctor.reassigned
+        ? ` and ${doctor.reassigned} patient${doctor.reassigned === 1 ? "" : "s"} reassigned`
+        : "";
+      toast.success(archive ? `${doctor.name} archived${moved}` : `${doctor.name} restored`);
     },
-    onSettled: () => invalidateDoctorData(queryClient),
+    onSettled: (_data, _err, { reassignTo }) => {
+      invalidateDoctorData(queryClient);
+      // Reassigned patients now show a different doctor.
+      if (reassignTo) void queryClient.invalidateQueries({ queryKey: qk.patients.all });
+    },
   });
 }

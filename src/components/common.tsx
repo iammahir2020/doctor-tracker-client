@@ -109,7 +109,7 @@ export function ConfirmDialog({
   onConfirm: () => Promise<unknown>;
 }) {
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; blocked: boolean } | null>(null);
 
   async function confirm() {
     setPending(true);
@@ -118,7 +118,12 @@ export function ConfirmDialog({
       await onConfirm();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof ApiError
+          ? // A conflict won't go away by retrying, so the confirm button is removed.
+            { message: err.message, blocked: err.status === 409 }
+          : { message: "Something went wrong. Please try again.", blocked: false },
+      );
     } finally {
       setPending(false);
     }
@@ -143,20 +148,24 @@ export function ConfirmDialog({
             role="alert"
             className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
           >
-            {error}
+            {error.message}
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>
+            {error?.blocked ? "Close" : "Cancel"}
+          </AlertDialogCancel>
           {/* A plain button, not AlertDialogAction, so the dialog stays open while it runs. */}
-          <Button
-            variant={destructive ? "destructive" : "default"}
-            disabled={pending}
-            onClick={confirm}
-          >
-            {pending && <Loader2 className="animate-spin" aria-hidden />}
-            {confirmLabel}
-          </Button>
+          {!error?.blocked && (
+            <Button
+              variant={destructive ? "destructive" : "default"}
+              disabled={pending}
+              onClick={confirm}
+            >
+              {pending && <Loader2 className="animate-spin" aria-hidden />}
+              {confirmLabel}
+            </Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

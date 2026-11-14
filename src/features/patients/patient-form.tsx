@@ -1,20 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Archive, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Field } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -32,10 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDoctorOptions } from "@/features/doctors/api";
+import { DoctorPicker } from "@/features/doctors/doctor-picker";
 import { useLookups } from "@/features/lookups/api";
 import { ApiError, fieldErrors, GENDERS, PATIENT_STATUSES, type Patient } from "@/lib/api";
-import { cn, toDateParam, useDebounce } from "@/lib/utils";
+import { toDateParam } from "@/lib/utils";
 import { useSavePatient } from "./api";
 
 const today = () => toDateParam(new Date());
@@ -97,6 +88,7 @@ export function PatientFormDialog({
   onOpenChange,
   patient,
   doctor,
+  onArchive,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -104,6 +96,8 @@ export function PatientFormDialog({
   patient?: Patient;
   /** Adding from a doctor's page: the doctor is fixed. */
   doctor?: { _id: string; name: string };
+  /** Shown when editing (admins only): hands off to the archive dialog. */
+  onArchive?: (patient: Patient) => void;
 }) {
   const { data: lookups } = useLookups();
   const save = useSavePatient();
@@ -297,6 +291,7 @@ export function PatientFormDialog({
                 name="doctorId"
                 render={({ field }) => (
                   <DoctorPicker
+                    id="p-doctor"
                     value={field.value}
                     initialLabel={patient?.doctorName ?? undefined}
                     onChange={field.onChange}
@@ -328,87 +323,30 @@ export function PatientFormDialog({
           </p>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" disabled={save.isPending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="patient-form" disabled={save.isPending}>
-            {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
-            {patient ? "Save changes" : "Add patient"}
-          </Button>
+        <DialogFooter className="sm:justify-between">
+          {patient && onArchive ? (
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              disabled={save.isPending}
+              onClick={() => onArchive(patient)}
+            >
+              <Archive aria-hidden /> Archive…
+            </Button>
+          ) : (
+            <span aria-hidden />
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="outline" disabled={save.isPending} onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="patient-form" disabled={save.isPending}>
+              {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
+              {patient ? "Save changes" : "Add patient"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** Searches doctors on the server (there can be many), showing up to 20 matches. */
-function DoctorPicker({
-  value,
-  initialLabel,
-  onChange,
-  invalid,
-}: {
-  value: string;
-  initialLabel?: string;
-  onChange: (id: string) => void;
-  invalid: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [label, setLabel] = useState(initialLabel);
-  const debounced = useDebounce(search, 250);
-  const { data: doctors, isFetching } = useDoctorOptions(debounced);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id="p-doctor"
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-invalid={invalid}
-          className={cn(
-            "w-full justify-between font-normal",
-            !value && "text-muted-foreground",
-            invalid && "border-destructive",
-          )}
-        >
-          {value ? (label ?? "Selected doctor") : "Search for a doctor…"}
-          <ChevronsUpDown className="opacity-50" aria-hidden />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        {/* Filtering happens on the server, so cmdk's own filter is off. */}
-        <Command shouldFilter={false}>
-          <CommandInput placeholder="Type a name…" value={search} onValueChange={setSearch} />
-          <CommandList>
-            <CommandEmpty>{isFetching ? "Searching…" : "No active doctors found."}</CommandEmpty>
-            <CommandGroup>
-              {doctors?.map((d) => (
-                <CommandItem
-                  key={d._id}
-                  value={d._id}
-                  onSelect={() => {
-                    onChange(d._id);
-                    setLabel(d.name);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(value === d._id ? "opacity-100" : "opacity-0")}
-                    aria-hidden
-                  />
-                  <span className="truncate">{d.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{d.hospital}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }

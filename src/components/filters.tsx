@@ -385,7 +385,7 @@ export function RangeInput({
         inputMode="numeric"
         aria-label={`${label} minimum`}
         placeholder={placeholder[0]}
-        className="w-20"
+        className="w-24"
         value={local.min}
         onChange={(e) => setLocal((l) => ({ ...l, min: e.target.value }))}
       />
@@ -398,7 +398,7 @@ export function RangeInput({
         inputMode="numeric"
         aria-label={`${label} maximum`}
         placeholder={placeholder[1]}
-        className="w-20"
+        className="w-24"
         value={local.max}
         onChange={(e) => setLocal((l) => ({ ...l, max: e.target.value }))}
       />

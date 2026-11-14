@@ -1,6 +1,14 @@
 "use client";
 
-import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Plus } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowRight,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmDialog, EmptyState, PageHeader, useIsAdmin } from "@/components/common";
@@ -13,6 +21,15 @@ import {
   SearchInput,
   SelectFilter,
 } from "@/components/filters";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,8 +40,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { DoctorPicker } from "@/features/doctors/doctor-picker";
 import { useLookups } from "@/features/lookups/api";
-import { GENDERS, PATIENT_STATUSES, type Patient, type PatientStatus } from "@/lib/api";
+import { ApiError, GENDERS, PATIENT_STATUSES, type Patient, type PatientStatus } from "@/lib/api";
 import { ageFrom, cn, compact, formatDate, plural, useUrlState } from "@/lib/utils";
 import { useSetPatientArchived, usePatients, type PatientListParams } from "./api";
 import { GENDER_LABEL, PatientFormDialog, STATUS_LABEL } from "./patient-form";
@@ -135,54 +153,139 @@ function usePatientParams(doctorId: string | undefined): PatientListParams {
 function PatientRowActions({
   patient,
   onEdit,
+  onArchive,
 }: {
   patient: Patient;
   onEdit: (patient: Patient) => void;
+  onArchive: (patient: Patient) => void;
 }) {
   const isAdmin = useIsAdmin();
-  const [confirming, setConfirming] = useState(false);
-  const setArchived = useSetPatientArchived();
-  const archive = !patient.isArchived;
-
   // Staff can edit but not archive; an archived patient can only be restored (admin).
   if (!isAdmin && patient.isArchived) return null;
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${patient.name}`}>
-            <MoreHorizontal aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {!patient.isArchived && (
-            <DropdownMenuItem onSelect={() => onEdit(patient)}>
-              <Pencil aria-hidden /> Edit
-            </DropdownMenuItem>
-          )}
-          {isAdmin && (
-            <DropdownMenuItem onSelect={() => setConfirming(true)}>
-              {archive ? <Archive aria-hidden /> : <ArchiveRestore aria-hidden />}
-              {archive ? "Archive" : "Restore"}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${patient.name}`}>
+          <MoreHorizontal aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {!patient.isArchived && (
+          <DropdownMenuItem onSelect={() => onEdit(patient)}>
+            <Pencil aria-hidden /> Edit
+          </DropdownMenuItem>
+        )}
+        {isAdmin && (
+          <DropdownMenuItem onSelect={() => onArchive(patient)}>
+            {patient.isArchived ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
+            {patient.isArchived ? "Restore…" : "Archive…"}
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
+ * Archive or restore a patient. If their doctor has been archived, a plain Restore would be
+ * refused, so this explains why and offers the two ways forward instead: restore the doctor, or
+ * restore the patient under another doctor.
+ */
+function PatientArchiveDialog({
+  patient,
+  open,
+  onOpenChange,
+}: {
+  patient: Patient | undefined;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const setArchived = useSetPatientArchived();
+  const [doctorId, setDoctorId] = useState("");
+
+  if (!patient) return null;
+  const archive = !patient.isArchived;
+
+  if (archive || !patient.doctorArchived) {
+    return (
       <ConfirmDialog
-        open={confirming}
-        onOpenChange={setConfirming}
+        open={open}
+        onOpenChange={onOpenChange}
         title={archive ? `Archive ${patient.name}?` : `Restore ${patient.name}?`}
         description={
           archive
-            ? "Archiving removes the patient from active lists, search and the dashboard. The record is kept, and an admin can restore it later."
+            ? "Archiving removes the patient from active lists, search and the dashboard, and from their doctor's patient count. The record is kept, and an admin can restore it later."
             : "The patient will appear in lists, search and the dashboard again."
         }
         confirmLabel={archive ? "Archive" : "Restore"}
         destructive={archive}
         onConfirm={() => setArchived.mutateAsync({ id: patient._id, archive })}
       />
-    </>
+    );
+  }
+
+  const close = (next: boolean) => {
+    if (setArchived.isPending) return;
+    if (!next) {
+      setDoctorId("");
+      setArchived.reset();
+    }
+    onOpenChange(next);
+  };
+  const error = setArchived.error instanceof ApiError ? setArchived.error.message : null;
+
+  return (
+    <AlertDialog open={open} onOpenChange={close}>
+      <AlertDialogContent className="sm:max-w-lg">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{patient.doctorName ?? "Their doctor"} is archived</AlertDialogTitle>
+          <AlertDialogDescription>
+            {patient.name} can&apos;t go back to an archived doctor. Restore the doctor first, or
+            restore {patient.name} under another doctor.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="restore-doctor">Restore under</Label>
+          <DoctorPicker
+            id="restore-doctor"
+            value={doctorId}
+            excludeId={patient.doctorId}
+            onChange={setDoctorId}
+          />
+        </div>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {error}
+          </p>
+        )}
+        <AlertDialogFooter className="sm:justify-between">
+          <Button variant="ghost" asChild>
+            <Link href={`/doctors/${patient.doctorId}`}>
+              Open {patient.doctorName ?? "doctor"} <ArrowRight aria-hidden />
+            </Link>
+          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <AlertDialogCancel disabled={setArchived.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              disabled={!doctorId || setArchived.isPending}
+              onClick={() =>
+                setArchived.mutate(
+                  { id: patient._id, archive: false, doctorId },
+                  { onSuccess: () => close(false) },
+                )
+              }
+            >
+              {setArchived.isPending && <Loader2 className="animate-spin" aria-hidden />}
+              Restore under this doctor
+            </Button>
+          </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -206,9 +309,16 @@ export function PatientsTable({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Patient | undefined>();
 
+  const [archiving, setArchiving] = useState<Patient | undefined>();
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
   const openForm = (patient?: Patient) => {
     setEditing(patient);
     setFormOpen(true);
+  };
+  const openArchive = (patient: Patient) => {
+    setArchiving(patient);
+    setArchiveOpen(true);
   };
   const hasFilters = url.has(FILTER_KEYS);
 
@@ -292,7 +402,9 @@ export function PatientsTable({
         onSortChange={(s) => url.set({ sort: s.sort, order: s.order })}
         onPageChange={(page) => url.set({ page })}
         onPageSizeChange={(pageSize) => url.set({ pageSize })}
-        rowActions={(p) => <PatientRowActions patient={p} onEdit={openForm} />}
+        rowActions={(p) => (
+          <PatientRowActions patient={p} onEdit={openForm} onArchive={openArchive} />
+        )}
         rowClassName={(p) => cn(p.isArchived && "text-muted-foreground")}
         empty={
           <EmptyState
@@ -320,7 +432,16 @@ export function PatientsTable({
         onOpenChange={setFormOpen}
         patient={editing}
         doctor={doctor}
+        onArchive={
+          isAdmin
+            ? (p) => {
+                setFormOpen(false);
+                openArchive(p);
+              }
+            : undefined
+        }
       />
+      <PatientArchiveDialog patient={archiving} open={archiveOpen} onOpenChange={setArchiveOpen} />
     </>
   );
 }

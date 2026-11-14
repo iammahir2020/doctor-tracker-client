@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Archive, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -26,6 +26,7 @@ import {
 import { useLookups } from "@/features/lookups/api";
 import { ApiError, fieldErrors, type Doctor } from "@/lib/api";
 import { useSaveDoctor } from "./api";
+import { doctorArchiveLabel } from "./doctor-archive-dialog";
 
 // Mirrors the server's schema for instant feedback; the server stays the source of truth.
 const schema = z.object({
@@ -48,11 +49,14 @@ export function DoctorFormDialog({
   open,
   onOpenChange,
   doctor,
+  onArchive,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Editing when set, creating otherwise. */
   doctor?: Doctor;
+  /** Shown when editing: hands off to the archive dialog. */
+  onArchive?: (doctor: Doctor) => void;
 }) {
   const { data: lookups } = useLookups();
   const save = useSaveDoctor();
@@ -175,14 +179,28 @@ export function DoctorFormDialog({
           </p>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" disabled={save.isPending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="doctor-form" disabled={save.isPending}>
-            {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
-            {doctor ? "Save changes" : "Add doctor"}
-          </Button>
+        <DialogFooter className="sm:justify-between">
+          {doctor && onArchive ? (
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              disabled={save.isPending}
+              onClick={() => onArchive(doctor)}
+            >
+              <Archive aria-hidden /> {doctorArchiveLabel(doctor)}…
+            </Button>
+          ) : (
+            <span aria-hidden />
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="outline" disabled={save.isPending} onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="doctor-form" disabled={save.isPending}>
+              {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
+              {doctor ? "Save changes" : "Add doctor"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

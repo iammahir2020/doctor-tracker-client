@@ -74,8 +74,12 @@ export function useSavePatient() {
 export function useSetPatientArchived() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, archive }: { id: string; archive: boolean }) =>
-      api<Patient>(`/patients/${id}/${archive ? "archive" : "restore"}`, { method: "POST" }),
+    mutationFn: ({ id, archive, doctorId }: { id: string; archive: boolean; doctorId?: string }) =>
+      // doctorId: restore under another doctor when the patient's own doctor is archived.
+      api<Patient>(`/patients/${id}/${archive ? "archive" : "restore"}`, {
+        method: "POST",
+        body: doctorId ? { doctorId } : undefined,
+      }),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ["patients", "list"] });
       const snapshot = queryClient.getQueriesData<Paged<Patient>>({

@@ -3,7 +3,7 @@
 import { Archive, ArchiveRestore, ArrowLeft, Building2, Mail, Pencil, Phone } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { ConfirmDialog, ErrorState, RoleGate } from "@/components/common";
+import { ErrorState, RoleGate } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,14 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLookups } from "@/features/lookups/api";
 import { PatientsTable } from "@/features/patients/patients-table";
 import { ApiError } from "@/lib/api";
-import { formatDate, numberFormat, plural } from "@/lib/utils";
-import { useDoctor, useSetDoctorArchived } from "./api";
+import { formatDate, numberFormat } from "@/lib/utils";
+import { useDoctor } from "./api";
+import { DoctorArchiveDialog, doctorArchiveLabel } from "./doctor-archive-dialog";
 import { DoctorFormDialog } from "./doctor-form";
 
 export function DoctorDetail({ id }: { id: string }) {
   const { data: doctor, isPending, error, refetch } = useDoctor(id);
   const { data: lookups } = useLookups();
-  const setArchived = useSetDoctorArchived();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -78,7 +78,7 @@ export function DoctorDetail({ id }: { id: string }) {
             )}
             <Button variant="outline" onClick={() => setConfirming(true)}>
               {archive ? <Archive aria-hidden /> : <ArchiveRestore aria-hidden />}
-              {archive ? "Archive" : "Restore"}
+              {doctorArchiveLabel(doctor)}
             </Button>
           </div>
         </RoleGate>
@@ -127,38 +127,41 @@ export function DoctorDetail({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      <PatientsTable
-        doctor={doctor}
-        headerSlot={({ total, addButton }) => (
-          <div className="mb-4 flex items-end justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold">Patients</h2>
-              {total !== undefined && (
-                <p className="text-sm text-muted-foreground">
-                  {numberFormat.format(total)} shown with the current filters
-                </p>
-              )}
+      <section id="patients" aria-label="Patients" className="scroll-mt-20">
+        <PatientsTable
+          doctor={doctor}
+          headerSlot={({ total, addButton }) => (
+            <div className="mb-4 flex items-end justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold">Patients</h2>
+                {total !== undefined && (
+                  <p className="text-sm text-muted-foreground">
+                    {numberFormat.format(total)} shown with the current filters
+                  </p>
+                )}
+              </div>
+              {addButton}
             </div>
-            {addButton}
-          </div>
-        )}
-      />
+          )}
+        />
+      </section>
 
-      <DoctorFormDialog open={editing} onOpenChange={setEditing} doctor={doctor} />
-      <ConfirmDialog
+      <DoctorFormDialog
+        open={editing}
+        onOpenChange={setEditing}
+        doctor={doctor}
+        onArchive={() => {
+          setEditing(false);
+          setConfirming(true);
+        }}
+      />
+      <DoctorArchiveDialog
+        doctor={doctor}
         open={confirming}
         onOpenChange={setConfirming}
-        title={archive ? `Archive ${doctor.name}?` : `Restore ${doctor.name}?`}
-        description={
-          archive
-            ? doctor.patientCount > 0
-              ? `${doctor.name} has ${plural(doctor.patientCount, "active patient")}. Reassign or archive them first, then archive the doctor.`
-              : "Archiving removes the doctor from active lists and the dashboard. Nothing is deleted, and an admin can restore them later."
-            : "The doctor will appear in lists, search and the dashboard again."
+        onReviewPatients={() =>
+          document.getElementById("patients")?.scrollIntoView({ behavior: "smooth" })
         }
-        confirmLabel={archive ? "Archive" : "Restore"}
-        destructive={archive}
-        onConfirm={() => setArchived.mutateAsync({ id: doctor._id, archive })}
       />
     </>
   );

@@ -44,6 +44,8 @@ export type Patient = Archivable & {
   notes?: string;
   doctorId: string;
   doctorName: string | null;
+  /** True when the patient's doctor is archived: the patient can't be restored until it isn't. */
+  doctorArchived: boolean;
   createdAt: string;
 };
 

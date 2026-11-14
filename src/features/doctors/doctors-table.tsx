@@ -3,7 +3,7 @@
 import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { ConfirmDialog, EmptyState, PageHeader, RoleGate, useIsAdmin } from "@/components/common";
+import { EmptyState, PageHeader, RoleGate, useIsAdmin } from "@/components/common";
 import { DataTable, type Column } from "@/components/data-table";
 import {
   DateRangePicker,
@@ -25,7 +25,8 @@ import { Label } from "@/components/ui/label";
 import { useLookups } from "@/features/lookups/api";
 import type { Doctor } from "@/lib/api";
 import { compact, formatDate, numberFormat, plural, useUrlState } from "@/lib/utils";
-import { useDoctors, useSetDoctorArchived, type DoctorListParams } from "./api";
+import { useDoctors, type DoctorListParams } from "./api";
+import { DoctorArchiveDialog, doctorArchiveLabel } from "./doctor-archive-dialog";
 import { DoctorFormDialog } from "./doctor-form";
 
 function SpecializationName({ id }: { id: string }) {
@@ -108,48 +109,31 @@ function useDoctorParams(): DoctorListParams {
 function DoctorRowActions({
   doctor,
   onEdit,
+  onArchive,
 }: {
   doctor: Doctor;
   onEdit: (doctor: Doctor) => void;
+  onArchive: (doctor: Doctor) => void;
 }) {
-  const [confirming, setConfirming] = useState(false);
-  const setArchived = useSetDoctorArchived();
-  const archive = !doctor.isArchived;
-
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${doctor.name}`}>
-            <MoreHorizontal aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {!doctor.isArchived && (
-            <DropdownMenuItem onSelect={() => onEdit(doctor)}>
-              <Pencil aria-hidden /> Edit
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem onSelect={() => setConfirming(true)}>
-            {archive ? <Archive aria-hidden /> : <ArchiveRestore aria-hidden />}
-            {archive ? "Archive" : "Restore"}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${doctor.name}`}>
+          <MoreHorizontal aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {!doctor.isArchived && (
+          <DropdownMenuItem onSelect={() => onEdit(doctor)}>
+            <Pencil aria-hidden /> Edit
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <ConfirmDialog
-        open={confirming}
-        onOpenChange={setConfirming}
-        title={archive ? `Archive ${doctor.name}?` : `Restore ${doctor.name}?`}
-        description={
-          archive
-            ? "Archiving removes the doctor from active lists and the dashboard. Nothing is deleted, and an admin can restore them later. Doctors with active patients can't be archived."
-            : "The doctor will appear in lists, search and the dashboard again."
-        }
-        confirmLabel={archive ? "Archive" : "Restore"}
-        destructive={archive}
-        onConfirm={() => setArchived.mutateAsync({ id: doctor._id, archive })}
-      />
-    </>
+        )}
+        <DropdownMenuItem onSelect={() => onArchive(doctor)}>
+          {doctor.isArchived ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
+          {doctorArchiveLabel(doctor)}…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -162,9 +146,16 @@ export function DoctorsView() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Doctor | undefined>();
 
+  const [archiving, setArchiving] = useState<Doctor | undefined>();
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
   const openForm = (doctor?: Doctor) => {
     setEditing(doctor);
     setFormOpen(true);
+  };
+  const openArchive = (doctor: Doctor) => {
+    setArchiving(doctor);
+    setArchiveOpen(true);
   };
   const hasFilters = url.has(FILTER_KEYS);
 
@@ -251,7 +242,11 @@ export function DoctorsView() {
         onSortChange={(s) => url.set({ sort: s.sort, order: s.order })}
         onPageChange={(page) => url.set({ page })}
         onPageSizeChange={(pageSize) => url.set({ pageSize })}
-        rowActions={isAdmin ? (d) => <DoctorRowActions doctor={d} onEdit={openForm} /> : undefined}
+        rowActions={
+          isAdmin
+            ? (d) => <DoctorRowActions doctor={d} onEdit={openForm} onArchive={openArchive} />
+            : undefined
+        }
         rowClassName={(d) => (d.isArchived ? "text-muted-foreground" : undefined)}
         empty={
           <EmptyState
@@ -268,7 +263,16 @@ export function DoctorsView() {
         }
       />
 
-      <DoctorFormDialog open={formOpen} onOpenChange={setFormOpen} doctor={editing} />
+      <DoctorFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        doctor={editing}
+        onArchive={(d) => {
+          setFormOpen(false);
+          openArchive(d);
+        }}
+      />
+      <DoctorArchiveDialog doctor={archiving} open={archiveOpen} onOpenChange={setArchiveOpen} />
     </>
   );
 }
