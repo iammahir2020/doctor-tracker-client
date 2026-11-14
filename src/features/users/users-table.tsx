@@ -347,13 +347,19 @@ function UsersList() {
         }
       />
 
-      <FilterBar canClear={hasFilters} onClear={() => url.clear(FILTER_KEYS)}>
-        <SearchInput
-          label="Search users"
-          placeholder="Search name or email…"
-          value={params.search ?? ""}
-          onChange={(search) => url.set({ search })}
-        />
+      <FilterBar
+        canClear={hasFilters}
+        onClear={() => url.clear(FILTER_KEYS)}
+        activeCount={FILTER_KEYS.filter((k) => k !== "search" && url.get(k)).length}
+        search={
+          <SearchInput
+            label="Search users"
+            placeholder="Search name or email…"
+            value={params.search ?? ""}
+            onChange={(search) => url.set({ search })}
+          />
+        }
+      >
         <SelectFilter
           label="Roles"
           options={ROLE_OPTIONS}

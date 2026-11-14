@@ -222,13 +222,19 @@ export function PatientsTable({
     <>
       {headerSlot({ total: query.data?.meta.total, addButton })}
 
-      <FilterBar canClear={hasFilters} onClear={() => url.clear(FILTER_KEYS)}>
-        <SearchInput
-          label="Search patients"
-          placeholder="Search name or email…"
-          value={params.search ?? ""}
-          onChange={(search) => url.set({ search })}
-        />
+      <FilterBar
+        canClear={hasFilters}
+        onClear={() => url.clear(FILTER_KEYS)}
+        activeCount={FILTER_KEYS.filter((k) => k !== "search" && url.get(k)).length}
+        search={
+          <SearchInput
+            label="Search patients"
+            placeholder="Search name or email…"
+            value={params.search ?? ""}
+            onChange={(search) => url.set({ search })}
+          />
+        }
+      >
         <MultiSelectFilter
           label="Condition"
           options={lookups?.conditionOptions ?? []}

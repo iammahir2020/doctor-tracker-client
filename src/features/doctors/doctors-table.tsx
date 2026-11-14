@@ -186,13 +186,19 @@ export function DoctorsView() {
         }
       />
 
-      <FilterBar canClear={hasFilters} onClear={() => url.clear(FILTER_KEYS)}>
-        <SearchInput
-          label="Search doctors"
-          placeholder="Search name or email…"
-          value={params.search ?? ""}
-          onChange={(search) => url.set({ search })}
-        />
+      <FilterBar
+        canClear={hasFilters}
+        onClear={() => url.clear(FILTER_KEYS)}
+        activeCount={FILTER_KEYS.filter((k) => k !== "search" && url.get(k)).length}
+        search={
+          <SearchInput
+            label="Search doctors"
+            placeholder="Search name or email…"
+            value={params.search ?? ""}
+            onChange={(search) => url.set({ search })}
+          />
+        }
+      >
         <MultiSelectFilter
           label="Specialization"
           options={lookups?.specializationOptions ?? []}

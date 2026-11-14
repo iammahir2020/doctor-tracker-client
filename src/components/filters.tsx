@@ -1,8 +1,8 @@
 "use client";
 
 import { endOfDay, startOfDay, subDays, subMonths, startOfYear } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CalendarIcon, Check, ChevronsUpDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -28,23 +29,83 @@ import { cn, formatDate, toDateParam, useDebounce } from "@/lib/utils";
 
 export type Option = { value: string; label: string };
 
+const DESKTOP_QUERY = "(min-width: 640px)";
+
+function subscribeToDesktop(onChange: () => void) {
+  const media = window.matchMedia(DESKTOP_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+/** Server renders the desktop layout; phones switch after hydration without a mismatch. */
+function useIsDesktop() {
+  return useSyncExternalStore(
+    subscribeToDesktop,
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => true,
+  );
+}
+
+/**
+ * Search is always visible. The other filters sit inline on wider screens and in a bottom sheet
+ * on phones, where five rows of controls would push the results off screen.
+ */
 export function FilterBar({
+  search,
   children,
   onClear,
   canClear,
+  activeCount,
 }: {
+  search: React.ReactNode;
   children: React.ReactNode;
   onClear: () => void;
   canClear: boolean;
+  /** Filters other than search that are set, shown on the mobile button. */
+  activeCount: number;
 }) {
+  const isDesktop = useIsDesktop();
+  const clear = canClear && (
+    <Button variant="ghost" size="sm" onClick={onClear}>
+      <X aria-hidden /> Clear filters
+    </Button>
+  );
+
+  if (isDesktop) {
+    return (
+      <div className="mb-4 flex flex-wrap items-center gap-2" role="search">
+        {search}
+        {children}
+        {clear}
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2" role="search">
-      {children}
-      {canClear && (
-        <Button variant="ghost" size="sm" onClick={onClear}>
-          <X aria-hidden /> Clear filters
-        </Button>
-      )}
+    <div className="mb-4 flex items-center gap-2" role="search">
+      <div className="min-w-0 flex-1">{search}</div>
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" aria-label={`Filters, ${activeCount} active`}>
+            <SlidersHorizontal aria-hidden />
+            Filters
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="rounded-sm px-1.5">
+                {activeCount}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="max-h-[85svh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Filters</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col items-stretch gap-3 px-4 pb-6 [&>button]:w-full [&>button]:justify-start">
+            {children}
+            {clear}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
