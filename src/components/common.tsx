@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMe } from "@/features/auth/api";
+import { useCurrentUser } from "@/features/auth/api";
 import { ApiError, type Role } from "@/lib/api";
 
 export function PageHeader({
@@ -37,12 +37,12 @@ export function PageHeader({
 
 /** Hides UI the role can't use. The server enforces the same rule, this is only for UX. */
 export function RoleGate({ role, children }: { role: Role; children: React.ReactNode }) {
-  const { data: me } = useMe();
+  const me = useCurrentUser();
   return me?.role === role ? <>{children}</> : null;
 }
 
 export function useIsAdmin() {
-  const { data: me } = useMe();
+  const me = useCurrentUser();
   return me?.role === "admin";
 }
 

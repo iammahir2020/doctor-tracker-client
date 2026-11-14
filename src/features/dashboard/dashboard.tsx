@@ -16,13 +16,12 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { ErrorState } from "@/components/common";
 import { DateRangePicker } from "@/components/filters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMe } from "@/features/auth/api";
+import { useCurrentUser } from "@/features/auth/api";
 import { useLookups } from "@/features/lookups/api";
 import { STATUS_LABEL } from "@/features/patients/patient-form";
 import type { PatientStatus, Stats } from "@/lib/api";
@@ -256,26 +255,15 @@ function StatusBreakdown({ data }: { data: { status: PatientStatus; count: numbe
 
 // ---------- page ----------
 
-const noopSubscribe = () => () => {};
-
-/**
- * Time of day and the user's name are only known in the browser (the server runs in UTC and has no
- * cached user), so the greeting renders after hydration to avoid a server/client mismatch.
- */
+/** Name and local time of day are only known in the browser, after hydration. */
 function Greeting() {
-  const { data: me } = useMe();
-  const isClient = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
-  if (!isClient) return <>Dashboard</>;
+  const me = useCurrentUser();
+  if (!me) return <>Dashboard</>;
   const hour = new Date().getHours();
   const text = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   return (
     <>
-      {text}
-      {me ? `, ${me.name.split(" ")[0]}` : ""}
+      {text}, {me.name.split(" ")[0]}
     </>
   );
 }

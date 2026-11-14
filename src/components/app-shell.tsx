@@ -31,7 +31,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useLogout, useMe } from "@/features/auth/api";
+import { useCurrentUser, useLogout } from "@/features/auth/api";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; adminOnly?: boolean };
@@ -56,7 +56,7 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const { data: me } = useMe();
+  const me = useCurrentUser();
   const items = NAV.filter((item) => !item.adminOnly || me?.role === "admin");
 
   return (
@@ -129,11 +129,10 @@ function initials(name: string) {
 }
 
 function UserMenu() {
-  const { data: me, isPending } = useMe();
+  const me = useCurrentUser();
   const logout = useLogout();
 
-  if (isPending) return <Skeleton className="size-8 rounded-full" />;
-  if (!me) return null;
+  if (!me) return <Skeleton className="size-8 rounded-full" />;
 
   return (
     <DropdownMenu>

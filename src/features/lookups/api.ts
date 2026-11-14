@@ -52,10 +52,15 @@ export function useLookupMutation() {
           return api<Lookup>(`/lookups/${a.type}/${a.id}/${a.kind}`, { method: "POST" });
       }
     },
-    onSuccess: (_data, a) => {
+    onSuccess: (lookup, a) => {
       void queryClient.invalidateQueries({ queryKey: qk.lookups });
-      const verb = { create: "Added", rename: "Renamed", archive: "Archived", restore: "Restored" };
-      toast.success(`${verb[a.kind]} ${a.kind === "create" || a.kind === "rename" ? a.name : ""}`);
+      const verb = {
+        create: "Added",
+        rename: "Renamed to",
+        archive: "Archived",
+        restore: "Restored",
+      };
+      toast.success(`${verb[a.kind]} ${lookup.name}`);
     },
     onError: (err) => {
       toast.error(err instanceof ApiError ? err.message : "Could not save the change");
