@@ -199,14 +199,13 @@ export function DoctorsView() {
           selected={params.specialization ?? []}
           onChange={(v) => url.set({ specialization: v.join(",") })}
         />
-        <div className="w-full sm:w-48">
-          <SearchInput
-            label="Filter by hospital"
-            placeholder="Hospital…"
-            value={params.hospital ?? ""}
-            onChange={(hospital) => url.set({ hospital })}
-          />
-        </div>
+        <SearchInput
+          label="Filter by hospital"
+          placeholder="Hospital…"
+          className="sm:w-48"
+          value={params.hospital ?? ""}
+          onChange={(hospital) => url.set({ hospital })}
+        />
         <DateRangePicker
           label="Date added"
           value={{ from: params.createdFrom, to: params.createdTo }}

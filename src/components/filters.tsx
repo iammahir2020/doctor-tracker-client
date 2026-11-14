@@ -58,11 +58,14 @@ export function SearchInput({
   onChange,
   placeholder,
   label,
+  className = "sm:w-64",
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   label: string;
+  /** Width at sm+; below sm every filter takes the full row. */
+  className?: string;
 }) {
   const [text, setText] = useState(value);
   const debounced = useDebounce(text.trim(), 300);
@@ -80,7 +83,7 @@ export function SearchInput({
   }, [debounced]);
 
   return (
-    <div className="relative w-full sm:w-64">
+    <div className={cn("relative w-full", className)}>
       <Search
         className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden
